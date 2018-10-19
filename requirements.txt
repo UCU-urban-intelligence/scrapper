@@ -1,3 +1,6 @@
 flask==1.0.2
 pymongo==3.5.1
 flask_pymongo==2.1.0
+geopandas==0.4.0
+Shapely==1.6.4
+overpy==0.4

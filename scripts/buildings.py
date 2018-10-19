@@ -1,4 +1,5 @@
 import sys
+import logging
 
 import overpy
 import geopandas as gpd
@@ -14,11 +15,14 @@ out body; >; out skel qt;
 """
 
 COL_NAMES = ['addr:housenumber', 'addr:street', 'amenity', 'building',
-             'building:levels', 'description', 'geometry', 'height', 'name',
-             'roof:angle', 'roof:height', 'roof:levels', 'roof:material',
-             'roof:orientation', 'roof:shape']
+             'description', 'geometry', 'height', 'name', 'roof:shape']
+
+NUM_COLS = ['building:levels', 'height', 'building:height', 'roof:angle',
+            'roof:height']
 
 GEOM_COLUMN = 'geometry'
+
+DEFAULT_HEIGHT = 15
 
 
 class DfCreator:
@@ -45,6 +49,26 @@ class DfCreator:
         # polygon need at least 3 points
         if outer_points and len(outer_points) > 2:
             row_data = tags.copy() if tags else {}
+
+            for key in NUM_COLS:
+                if key in row_data:
+                    split = row_data[key].split()
+                    nums = [float(s) for s in split if s.isdigit()]
+
+                    row_data[key] = nums[0] if nums else 0.0
+
+            if row_data.get('height') is None:
+                if row_data.get('building:height') is not None:
+                    row_data['height'] = row_data['building:height']
+
+                elif row_data.get('building:levels') is not None:
+                    row_data['height'] = row_data['building:levels'] * 3 + 3
+
+                else:
+                    row_data['height'] = DEFAULT_HEIGHT
+
+            if row_data.get('building') == 'yes':
+                row_data['building'] = None
 
             row_data.update({
                 GEOM_COLUMN: geometry.Polygon(outer_points, inner_points)
@@ -108,7 +132,10 @@ class DfCreator:
 
     def _df_from_result(self, result):
         relations_data = self._get_relations_data(result.relations)
+        logging.info('Processed relations data')
+
         ways_data = self._get_ways_data(result.ways)
+        logging.info('Processed ways data')
 
         return gpd.GeoDataFrame(
             ways_data + relations_data, columns=COL_NAMES, geometry=GEOM_COLUMN
@@ -122,8 +149,12 @@ class DfCreator:
 
         result = self.api.query(query)
 
+        logging.info('Got the result from API')
+
         return self._df_from_result(result)
 
+
+logging.basicConfig(level=logging.INFO)
 
 if __name__ == '__main__':
     creator = DfCreator()

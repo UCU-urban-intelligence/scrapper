@@ -1,6 +1,8 @@
 import sys
 import requests
 from random import randint
+from utils import create_net
+import json
 
 
 class AirCondition:
@@ -24,21 +26,25 @@ class AirCondition:
 
     def get_df(self, lat1, lng1, lat2, lng2):
         print(lat1, lng1, lat2, lng2)
-        mean_lat = (lat1 + lat2) / 2
-        mean_lng = (lng1 + lng2) / 2
-        print({"mean_lat": mean_lat, "mean_lng": mean_lng})
+        net = create_net(lat1, lng1, lat2, lng2, 1)
 
-        api_key_for_request = AirCondition.API_KEYS[randint(0, len(AirCondition.API_KEYS) - 1)]
+        result = []
+        for coordinates in net:
+            print(coordinates)
+            api_key_for_request = AirCondition.API_KEYS[randint(0, len(AirCondition.API_KEYS) - 1)]
 
-        response = requests.get(
-            AirCondition.API_PATH,
-            [
-                ("lat", "{:.3f}".format(round(mean_lat, 3))),
-                ("lon", "{:.3f}".format(round(mean_lng, 3))),
-                ("key", api_key_for_request)
-            ]
-        )
-        return response.text
+            response = requests.get(
+                AirCondition.API_PATH,
+                [
+                    ("lat", coordinates[0]),
+                    ("lon", coordinates[1]),
+                    ("key", api_key_for_request),
+                    ("fields", "country_aqi,breezometer_aqi,country_name")
+                ]
+            )
+            result.append(json.loads(response.text))
+
+        return result
 
 
 if __name__ == '__main__':

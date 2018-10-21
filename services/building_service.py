@@ -22,6 +22,8 @@ class BuildingService:
         self.__request_areas.create_index([("top_right", GEOSPHERE)])
 
     def __get_existing_bounds(self, bottom_left: Point, top_right: Point):
+        # TODO: remove after $within will be fixed
+        return None, None
         for request_area in self.__request_areas.find():
             existing_bottom_left = request_area['bottom_left']['coordinates']
             existing_top_right = request_area['top_right']['coordinates']

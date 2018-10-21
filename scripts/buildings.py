@@ -5,31 +5,52 @@ import overpy
 import geopandas as gpd
 from shapely import geometry
 
-OVERPASS_QUERY = """
-(
-    way["building"]({lat1}, {lng1}, {lat2}, {lng2});
-    relation["building"]({lat1}, {lng1}, {lat2}, {lng2});
-);
-
-out body; >; out skel qt;
-"""
-
-COL_NAMES = ['addr:housenumber', 'addr:street', 'amenity', 'building',
-             'description', 'geometry', 'height', 'name', 'roof:shape']
-
-NUM_COLS = ['building:levels', 'height', 'building:height', 'roof:angle',
-            'roof:height']
 
 GEOM_COLUMN = 'geometry'
-
 DEFAULT_HEIGHT = 15
 
 
-class DfCreator:
+class BaseOverpassGetter:
+    query_template = '({});  out body; >; out skel qt;'
 
     def __init__(self):
         self.api = overpy.Overpass()
         self.ways_in_relations = set()
+        self.query = self.query_template.format(self.base_query)
+
+    def _df_from_result(result):
+        raise NotImplementedError()
+
+    def get_df(self, lat1, lng1, lat2, lng2):
+        query = self.query.format(
+            lat1=lat1, lng1=lng1, lat2=lat2, lng2=lng2
+        )
+
+        result = self.api.query(query)
+
+        logging.info('Got response for {}, {}, {}, {}'.format(
+            lat1, lng1, lat2, lng2
+        ))
+
+        df = self._df_from_result(result)
+
+        logging.info('Created dataset for {}, {}, {}, {}'.format(
+            lat1, lng1, lat2, lng2
+        ))
+
+        return df
+
+
+class BuildingsGetter(BaseOverpassGetter):
+    base_query = """
+        way["building"]({lat1}, {lng1}, {lat2}, {lng2});
+        relation["building"]({lat1}, {lng1}, {lat2}, {lng2});
+    """
+    col_names = ['addr:housenumber', 'addr:street', 'amenity', 'building',
+                 'description', 'geometry', 'height', 'name', 'roof:shape']
+
+    num_cols = ['building:levels', 'height', 'building:height', 'roof:angle',
+                'roof:height']
 
     @staticmethod
     def _get_nodes_points(nodes):
@@ -39,8 +60,8 @@ class DfCreator:
             [float(node.lon), float(node.lat)] for node in nodes
         ]
 
-    @staticmethod
-    def _append_row_to_data(data, outer_points, inner_points=None, tags=None):
+    def _append_row_to_data(self, data, outer_points, inner_points=None,
+                            tags=None):
         """
          Create polygon using inner points and outer points. Append row to
          data list using this polygon and tags
@@ -50,7 +71,7 @@ class DfCreator:
         if outer_points and len(outer_points) > 2:
             row_data = tags.copy() if tags else {}
 
-            for key in NUM_COLS:
+            for key in self.num_cols:
                 if key in row_data:
                     split = row_data[key].split()
                     nums = [float(s) for s in split if s.isdigit()]
@@ -138,30 +159,18 @@ class DfCreator:
         logging.info('Processed ways data')
 
         return gpd.GeoDataFrame(
-            ways_data + relations_data, columns=COL_NAMES, geometry=GEOM_COLUMN
+            ways_data + relations_data, columns=self.col_names,
+            geometry=GEOM_COLUMN
         )
-
-    def get_df(self, lat1, lng1, lat2, lng2):
-
-        query = OVERPASS_QUERY.format(
-            lat1=lat1, lng1=lng1, lat2=lat2, lng2=lng2
-        )
-
-        result = self.api.query(query)
-
-        logging.info('Got the result from API')
-
-        return self._df_from_result(result)
 
 
 logging.basicConfig(level=logging.INFO)
 
 if __name__ == '__main__':
-    creator = DfCreator()
     bbox = map(float, sys.argv[1:])
 
-    df = creator.get_df(*bbox)
-    a = df.to_json()
+    getter = BuildingsGetter()
+    df = getter.get_df(*bbox)
 
     with open('out.geojson', 'w') as f:
         f.write(df.to_json())

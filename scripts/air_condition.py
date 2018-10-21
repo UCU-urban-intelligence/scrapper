@@ -26,7 +26,7 @@ class AirCondition:
 
     def get_df(self, lat1, lng1, lat2, lng2):
         print(lat1, lng1, lat2, lng2)
-        net = create_net(lat1, lng1, lat2, lng2, 1)
+        net = create_net(lat1, lng1, lat2, lng2, 0.1)
 
         result = []
         for coordinates in net:
@@ -39,10 +39,14 @@ class AirCondition:
                     ("lat", coordinates[0]),
                     ("lon", coordinates[1]),
                     ("key", api_key_for_request),
-                    ("fields", "country_aqi,breezometer_aqi,country_name")
+                    ("fields", "breezometer_aqi")
                 ]
             )
-            result.append(json.loads(response.text))
+
+            result.append({
+                "coordinates": [coordinates[0], coordinates[1]],
+                "response": json.loads(response.text)
+            })
 
         return result
 
@@ -54,4 +58,5 @@ if __name__ == '__main__':
     result = ac.get_df(*bbox)
 
     with open('out.json', 'w') as f:
-        f.write(str(result))
+        r = json.dumps(result)
+        f.write(str(r))

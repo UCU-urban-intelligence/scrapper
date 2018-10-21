@@ -15,10 +15,10 @@ app.json_encoder = JSONEncoder
 
 
 @app.route('/processing', methods=['POST'])
-def hello_world():
+def processing():
     data = request.get_json()
     building_service = BuildingService(mongo)
-    buildings = building_service.get_buildings(data)
+    buildings = building_service.get_buildings(data['bbox'])
     #coords = data['bbox']
     # mongo.db
     return '.'

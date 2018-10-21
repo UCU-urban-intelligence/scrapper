@@ -24,6 +24,6 @@ Comand to get geometry data from OSM using bbox:
 
 E. g. (Kyiv buildings):
 
-`$ pyhton scripts/buildings.py 50.303376 30.217896 50.602416 30.841370`
+`$ python scripts/buildings.py 50.303376 30.217896 50.602416 30.841370`
 
 Output will be located in `out.geojson`

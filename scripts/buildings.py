@@ -164,13 +164,49 @@ class BuildingsGetter(BaseOverpassGetter):
         )
 
 
-logging.basicConfig(level=logging.INFO)
+class ShopsGetter(BaseOverpassGetter):
+    base_query = """
+        node["shop"="convenience"]({lat1}, {lng1}, {lat2}, {lng2});
+        node["shop"="supermarket"]({lat1}, {lng1}, {lat2}, {lng2});
+        node["amenity"="cafe"]({lat1}, {lng1}, {lat2}, {lng2});
+        node["amenity"="fast_food"]({lat1}, {lng1}, {lat2}, {lng2});
+        node["amenity"="restaurant"]({lat1}, {lng1}, {lat2}, {lng2});
+    """
+
+    def _df_from_result(self, result):
+        data = []
+        for node in result.nodes:
+            row = {
+                'type': node.tags.get('shop', node.tags.get('amenity')),
+                'name': node.tags.get('name'),
+                GEOM_COLUMN: geometry.Point(float(node.lon), float(node.lat))
+            }
+
+            data.append(row)
+
+        return gpd.GeoDataFrame(data, geometry=GEOM_COLUMN)
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)-15s | %(levelname)s | %(message)s'
+)
 
 if __name__ == '__main__':
-    bbox = map(float, sys.argv[1:])
+    bbox = tuple(map(float, sys.argv[1:]))
 
-    getter = BuildingsGetter()
-    df = getter.get_df(*bbox)
+    logging.info('Collecting buildings...')
 
-    with open('out.geojson', 'w') as f:
-        f.write(df.to_json())
+    buildings_getter = BuildingsGetter()
+    buildings_df = buildings_getter.get_df(*bbox)
+
+    with open('buildings.geojson', 'w') as f:
+        f.write(buildings_df.to_json())
+
+    logging.info('Collecting shops...')
+
+    shops_getter = ShopsGetter()
+    shops_df = shops_getter.get_df(*bbox)
+
+    with open('shops.geojson', 'w') as f:
+        f.write(shops_df.to_json())

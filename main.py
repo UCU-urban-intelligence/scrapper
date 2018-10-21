@@ -3,6 +3,7 @@ from flask_pymongo import PyMongo
 
 from config.mongo import MONGO_PORT, MONGO_DB
 from utils.json_encoder import JSONEncoder
+from services.building_service import BuildingService
 
 app = Flask(__name__)
 
@@ -16,7 +17,9 @@ app.json_encoder = JSONEncoder
 @app.route('/processing', methods=['POST'])
 def hello_world():
     data = request.get_json()
-    coords = data['bbox']
+    building_service = BuildingService(mongo)
+    buildings = building_service.get_buildings(data)
+    #coords = data['bbox']
     # mongo.db
     return '.'
 

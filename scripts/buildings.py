@@ -161,6 +161,7 @@ if __name__ == '__main__':
     bbox = map(float, sys.argv[1:])
 
     df = creator.get_df(*bbox)
+    a = df.to_json()
 
     with open('out.geojson', 'w') as f:
         f.write(df.to_json())

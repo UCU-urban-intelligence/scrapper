@@ -1,31 +1,37 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Oct 19 19:07:16 2018
-
-@author: Serhii
-"""
-
 import sys
 import json
-from darksky import forecast
+# from darksky import forecast
 from datetime import datetime as dt
+import requests
+
 
 class DarkSkyWeather:
     
     API_KEY = "f47016c08a6a30275d7b9edc165cc766"
+    # API_KEY = "52d613b3bd28a5132972ce3889fc11a2"
+    BASE_URL = 'https://api.darksky.net'
+    FORECAST_URL = '/forecast/{key}/{lat},{lng},{timestamp}'
     
     def __init__(self):
         pass
-        
-        
+
+    def request(self, lat, lng, time):
+        result = requests.get(self.BASE_URL + self.FORECAST_URL.format(
+            key=self.API_KEY,
+            lat=str(lat),
+            lng=str(lng),
+            timestamp=str(time)
+        ))
+        return result.json()
+        pass
+
     def avg_hourly(self, hourlyData):
         s = 0
         l = len(hourlyData)
         for i in range(l):
-            s += hourlyData[i].temperature
-            
-        return round(s / l, 1)
+            s += hourlyData[i]['temperature']
 
+        return round(s / l, 1)
 
     def get_year_weather(self, lat0, lng0, lat1, lng1, steps=12):
         data = {
@@ -42,13 +48,12 @@ class DarkSkyWeather:
         lng = round((lng0+lng1)/2, 6)
         for i in range(steps):
             time = round(t + i * step)
-            point = forecast(DarkSkyWeather.API_KEY, lat, lng, time)
-                
+            point = self.request(lat, lng, time)
             item = {
                 'timestamp': time,
-                'temperature': self.avg_hourly(point.hourly.data),
-                'humidity': point.daily.data[0].humidity,
-                'cloud_cover': point.daily.data[0].cloudCover
+                'temperature': self.avg_hourly(point['hourly']['data']),
+                'humidity': point['daily']['data'][0]['humidity'],
+                'cloud_cover': point['daily']['data'][0]['cloudCover']
             }
             
             data['avg_temperature'] += item['temperature'] / steps
@@ -56,7 +61,7 @@ class DarkSkyWeather:
             data['avg_cloud_cover'] += item['cloud_cover'] / steps
 
             data['set'].append(item)
-            
+
         data['avg_temperature'] = round(data['avg_temperature'], 2)
         data['avg_humidity'] = round(data['avg_humidity'], 2)
         data['avg_cloud_cover'] = round(data['avg_cloud_cover'], 2)
@@ -71,5 +76,3 @@ if __name__ == '__main__':
 
     with open('climate.json', 'w') as outfile:
         json.dump(result, outfile)
-
-

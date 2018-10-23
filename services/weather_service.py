@@ -1,12 +1,7 @@
 from flask_pymongo import PyMongo
-from pymongo import GEOSPHERE
 from flask_pymongo.wrappers import Collection
 from scripts.weather import DarkSkyWeather
 from utils.nearest_point import find_nearest_point
-from shapely import geometry
-from shapely.geometry import Point
-
-from utils.custom_exceptions import ProcessingException
 
 
 class WeatherService:

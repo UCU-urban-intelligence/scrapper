@@ -4,7 +4,6 @@ from flask_pymongo import PyMongo
 from config.mongo import MONGO_PORT, MONGO_DB
 from utils.json_encoder import JSONEncoder
 from services.building_service import BuildingService
-from services.weather_service import WeatherService
 from utils.custom_exceptions import ProcessingException
 
 app = Flask(__name__)
@@ -25,8 +24,6 @@ def processing():
         building_service = BuildingService(mongo)
         buildings = building_service.get_buildings(data['bbox'])
 
-        #weather_service = WeatherService(mongo)
-        #weather_service.assign_weather(data['bbox'], buildings)
         # TODO: buildings are ready to be shown as heatmap
         return str(buildings.count())
     except ProcessingException as exc:

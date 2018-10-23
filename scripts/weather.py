@@ -54,19 +54,15 @@ class DarkSkyWeather:
         return round(s / l, 1)
 
     def get_year_weather(self, lng0, lat0, lng1, lat1, steps=12):
-
-        # use to test
-        # return [{'coordinates': [50.392725, 30.39711], 'response': {'temperature': 7.1, 'cloud_cover': 0.58, 'humidity': 0.77}}, {'coordinates': [50.392725, 30.447922], 'response': {'temperature': 7.08, 'cloud_cover': 0.58, 'humidity': 0.78}}, {'coordinates': [50.392725, 30.498734], 'response': {'temperature': 7.16, 'cloud_cover': 0.58, 'humidity': 0.77}}, {'coordinates': [50.392725, 30.549545], 'response': {'temperature': 7.39, 'cloud_cover': 0.59, 'humidity': 0.76}}, {'coordinates': [50.392725, 30.600357], 'response': {'temperature': 7.57, 'cloud_cover': 0.59, 'humidity': 0.75}}, {'coordinates': [50.392725, 30.651169], 'response': {'temperature': 7.56, 'cloud_cover': 0.59, 'humidity': 0.75}}, {'coordinates': [50.41677, 30.39711], 'response': {'temperature': 7.15, 'cloud_cover': 0.58, 'humidity': 0.77}}, {'coordinates': [50.41677, 30.447922], 'response': {'temperature': 7.03, 'cloud_cover': 0.58, 'humidity': 0.78}}, {'coordinates': [50.41677, 30.498734], 'response': {'temperature': 7.21, 'cloud_cover': 0.58, 'humidity': 0.77}}, {'coordinates': [50.41677, 30.549545], 'response': {'temperature': 7.19, 'cloud_cover': 0.58, 'humidity': 0.77}}, {'coordinates': [50.41677, 30.600357], 'response': {'temperature': 7.56, 'cloud_cover': 0.59, 'humidity': 0.75}}, {'coordinates': [50.41677, 30.651169], 'response': {'temperature': 7.5, 'cloud_cover': 0.59, 'humidity': 0.75}}, {'coordinates': [50.440816, 30.39711], 'response': {'temperature': 7.03, 'cloud_cover': 0.58, 'humidity': 0.78}}, {'coordinates': [50.440816, 30.447922], 'response': {'temperature': 7.18, 'cloud_cover': 0.58, 'humidity': 0.77}}, {'coordinates': [50.440816, 30.498734], 'response': {'temperature': 7.32, 'cloud_cover': 0.58, 'humidity': 0.76}}, {'coordinates': [50.440816, 30.549545], 'response': {'temperature': 6.98, 'cloud_cover': 0.58, 'humidity': 0.78}}, {'coordinates': [50.440816, 30.600357], 'response': {'temperature': 7.54, 'cloud_cover': 0.59, 'humidity': 0.75}}, {'coordinates': [50.440816, 30.651169], 'response': {'temperature': 7.51, 'cloud_cover': 0.59, 'humidity': 0.75}}, {'coordinates': [50.464862, 30.39711], 'response': {'temperature': 7.06, 'cloud_cover': 0.57, 'humidity': 0.78}}, {'coordinates': [50.464862, 30.447922], 'response': {'temperature': 7.07, 'cloud_cover': 0.58, 'humidity': 0.78}}, {'coordinates': [50.464862, 30.498734], 'response': {'temperature': 7.27, 'cloud_cover': 0.58, 'humidity': 0.77}}, {'coordinates': [50.464862, 30.549545], 'response': {'temperature': 7.57, 'cloud_cover': 0.58, 'humidity': 0.75}}, {'coordinates': [50.464862, 30.600357], 'response': {'temperature': 7.52, 'cloud_cover': 0.59, 'humidity': 0.75}}, {'coordinates': [50.464862, 30.651169], 'response': {'temperature': 7.5, 'cloud_cover': 0.59, 'humidity': 0.75}}, {'coordinates': [50.488908, 30.39711], 'response': {'temperature': 7.12, 'cloud_cover': 0.57, 'humidity': 0.77}}, {'coordinates': [50.488908, 30.447922], 'response': {'temperature': 7.29, 'cloud_cover': 0.57, 'humidity': 0.77}}, {'coordinates': [50.488908, 30.498734], 'response': {'temperature': 7.58, 'cloud_cover': 0.58, 'humidity': 0.75}}, {'coordinates': [50.488908, 30.549545], 'response': {'temperature': 7.6, 'cloud_cover': 0.58, 'humidity': 0.75}}, {'coordinates': [50.488908, 30.600357], 'response': {'temperature': 7.53, 'cloud_cover': 0.58, 'humidity': 0.75}}, {'coordinates': [50.488908, 30.651169], 'response': {'temperature': 7.49, 'cloud_cover': 0.59, 'humidity': 0.75}}, {'coordinates': [50.512953, 30.39711], 'response': {'temperature': 7.17, 'cloud_cover': 0.57, 'humidity': 0.77}}, {'coordinates': [50.512953, 30.447922], 'response': {'temperature': 7.45, 'cloud_cover': 0.57, 'humidity': 0.76}}, {'coordinates': [50.512953, 30.498734], 'response': {'temperature': 7.57, 'cloud_cover': 0.57, 'humidity': 0.75}}, {'coordinates': [50.512953, 30.549545], 'response': {'temperature': 7.61, 'cloud_cover': 0.58, 'humidity': 0.75}}, {'coordinates': [50.512953, 30.600357], 'response': {'temperature': 7.55, 'cloud_cover': 0.58, 'humidity': 0.75}}, {'coordinates': [50.512953, 30.651169], 'response': {'temperature': 7.57, 'cloud_cover': 0.58, 'humidity': 0.75}}]
-
         data = []
         day = 86400
-        year = 365*day
+        year = 365 * day
         step = year // steps
         t = round(dt.now().timestamp()) - year
         net = create_net(lat0, lng0, lat1, lng1, self.NET_STEP)
         if len(net) > self.MAX_QTY:
             net = self.net_by_quantity(lat0, lng0, lat1, lng1, self.MAX_QTY)
-        print(len(net))
+
         for coordinates in net:
             data_item = {
                 'temperature': 0,
@@ -75,7 +71,7 @@ class DarkSkyWeather:
             }
             lat = round(coordinates[0], 6)
             lng = round(coordinates[1], 6)
-            print(lat, lng)
+
             for i in range(steps):
                 time = round(t + i * step)
                 point = self.request(lat, lng, time)

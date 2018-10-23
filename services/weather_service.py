@@ -1,31 +1,54 @@
-from flask_pymongo import PyMongo
-from flask_pymongo.wrappers import Collection
 from scripts.weather import DarkSkyWeather
-from utils.nearest_point import find_nearest_point
+from shapely.geometry import Point
 
 
 class WeatherService:
-    __BUILDINGS_COLLECTION_NAME = 'buildings'
 
-    def __init__(self, mongo: PyMongo):
-        self.__buildings: Collection = mongo.db[self.__BUILDINGS_COLLECTION_NAME]
+    def __init__(self):
+        pass
 
-    def __get_weather(self, lat0, lng0, lat1, lng1):
+    @staticmethod
+    def __get_weather(lng0, lat0, lng1, lat1):
         ds_weather = DarkSkyWeather()
-        return ds_weather.get_year_weather(lat0, lng0, lat1, lng1)
+        return ds_weather.get_year_weather(lng0, lat0, lng1, lat1)
 
-    def __connect_weather_and_buildings(self, weather_net, buildings, bbox):
-        for building in buildings:
-            point = find_nearest_point(weather_net, building)
-            self.__buildings.update_one({'_id': building['_id']}, {'$set': point['response']})
+    @staticmethod
+    def __connect_weather_and_buildings(buildings, weather_net):
 
+        def nearest_point(geometry, net):
+            min_distance = 1000
+            closest_point = {}
+            for p in net:
+                point = Point(p['coordinates'][0], p['coordinates'][1])
+                distance = geometry.distance(point)
+                if distance < min_distance:
+                    min_distance = distance
+                    closest_point = p
 
-    def assign_weather(self, bbox, buildings=[]):
-        w_data = self.__get_weather(bbox[0], bbox[1], bbox[2], bbox[3])
+            return closest_point['response']
 
-        # TODO: replace with buildings from building_service when it works
-        # buildings = self.__buildings.find({})
+        def weather(geometry):
+            weather_point = nearest_point(geometry, weather_net)
+            return weather_point
 
-        self.__connect_weather_and_buildings(w_data, buildings, bbox)
+        buildings['weather'] = buildings['geometry'].apply(weather)
+
+        return buildings
+
+    @staticmethod
+    def enrich_buildings_with_weather(buildings, bottom_left, top_right):
+        weather_net = WeatherService.__get_weather(
+            bottom_left.x,
+            bottom_left.y,
+            top_right.x,
+            top_right.y
+        )
+
+        buildings = WeatherService.__connect_weather_and_buildings(
+            buildings,
+            weather_net
+        )
+
+        return buildings
 
 

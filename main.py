@@ -25,10 +25,10 @@ def processing():
         building_service = BuildingService(mongo)
         buildings = building_service.get_buildings(data['bbox'])
 
-        weather_service = WeatherService(mongo)
-        weather_service.assign_weather(data['bbox'], buildings)
+        #weather_service = WeatherService(mongo)
+        #weather_service.assign_weather(data['bbox'], buildings)
         # TODO: buildings are ready to be shown as heatmap
-        return '.'
+        return str(buildings.count())
     except ProcessingException as exc:
         return "Custom exception: {0}".format(exc.message)
     except Exception as exc:

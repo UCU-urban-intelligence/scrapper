@@ -27,10 +27,9 @@ class BuildingService:
         self.__buildings.create_index([("request_area_top_right", GEOSPHERE)])
         self.__request_areas.create_index([("bottom_left", GEOSPHERE)])
         self.__request_areas.create_index([("top_right", GEOSPHERE)])
+        self.__buildings.create_index([("building_centroid", GEOSPHERE)])
 
     def __get_existing_bounds(self, bottom_left: Point, top_right: Point):
-        # TODO: remove after $within will be fixed
-        return None, None
         for request_area in self.__request_areas.find():
             existing_bottom_left = request_area['bottom_left']['coordinates']
             existing_top_right = request_area['top_right']['coordinates']
@@ -47,6 +46,7 @@ class BuildingService:
         buildings['geometry'] = buildings['geometry'].apply(geometry.mapping)
         buildings['request_area_bottom_left'] = buildings['request_area_bottom_left'].apply(geometry.mapping)
         buildings['request_area_top_right'] = buildings['request_area_top_right'].apply(geometry.mapping)
+        buildings['building_centroid'] = buildings['building_centroid'].apply(geometry.mapping)
         return  buildings
 
     def __save_buildings(self, buildings):
@@ -59,7 +59,8 @@ class BuildingService:
         result = self.__request_areas.insert(request_area)
         return result
 
-    def __addRequestAreaToBuildings(self, buildings, bottom_left: Point, top_right: Point):
+    def __preProcessBuildings(self, buildings, bottom_left: Point, top_right: Point):
+        buildings['building_centroid'] = buildings['geometry'].centroid
         buildings['request_area_bottom_left'] = bottom_left
         buildings['request_area_top_right'] = top_right
 
@@ -95,10 +96,10 @@ class BuildingService:
             bottom_left.x, bottom_left.y, top_right.x, top_right.y
         )
 
-        if (buildings.shape[0] == 0):
+        if buildings.shape[0] == 0:
             raise ProcessingException("buildings are empty")
 
-        buildings = self.__addRequestAreaToBuildings(
+        buildings = self.__preProcessBuildings(
             buildings, bottom_left, top_right
         )
 
@@ -106,32 +107,41 @@ class BuildingService:
            buildings, bottom_left, top_right
         )
 
+        # TODO: ALL ENRICHMENT IS HERE
+
         return buildings
 
     def __get_buildings(self, existing_bottom_left: Point, existing_top_right: Point,
                         bottom_left: Point = None, top_right: Point = None):
-        query = {"$and":
-            [
-                {'request_area_bottom_left.coordinates.0': existing_bottom_left.x},
-                {'request_area_bottom_left.coordinates.1': existing_bottom_left.y},
-                {'request_area_top_right.coordinates.0': existing_top_right.x},
-                {'request_area_top_right.coordinates.1': existing_top_right.y}
-            ]
-        }
 
-        # TODO: $within doesn't work
-        if bottom_left and top_right and None:
+        if bottom_left and top_right:
             query = {"$and":
                 [
                     {'request_area_bottom_left.coordinates.0': existing_bottom_left.x},
                     {'request_area_bottom_left.coordinates.1': existing_bottom_left.y},
                     {'request_area_top_right.coordinates.0': existing_top_right.x},
                     {'request_area_top_right.coordinates.1': existing_top_right.y},
-                    {"geometry": {"$within":
-                        {
-                            "$box": [[bottom_left.x, bottom_left.y],
-                                     [top_right.x, top_right.y]]
+                    {"geometry": {"$geoWithin":
+                        {"$geometry": {
+                            "type": "Polygon",
+                            "coordinates": [[
+                                [top_right.x, bottom_left.y],
+                                [top_right.x, top_right.y],
+                                [bottom_left.x, top_right.y],
+                                [bottom_left.x, bottom_left.y],
+                                [top_right.x, bottom_left.y]
+                            ]]
                         }}}
+                    }
+                ]
+            }
+        else:
+            query = {"$and":
+                [
+                    {'request_area_bottom_left.coordinates.0': existing_bottom_left.x},
+                    {'request_area_bottom_left.coordinates.1': existing_bottom_left.y},
+                    {'request_area_top_right.coordinates.0': existing_top_right.x},
+                    {'request_area_top_right.coordinates.1': existing_top_right.y}
                 ]
             }
 

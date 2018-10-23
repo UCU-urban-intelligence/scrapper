@@ -5,6 +5,8 @@ from scripts.buildings import BuildingsGetter
 from shapely import geometry
 from shapely.geometry import Point
 
+from utils.custom_exceptions import ProcessingException
+
 
 class BuildingService:
     __BUILDINGS_COLLECTION_NAME = 'buildings'
@@ -36,7 +38,14 @@ class BuildingService:
 
         return None, None
 
+    def __mapToGeoJson(self, buildings):
+        buildings['geometry'] = buildings['geometry'].apply(geometry.mapping)
+        buildings['request_area_bottom_left'] = buildings['request_area_bottom_left'].apply(geometry.mapping)
+        buildings['request_area_top_right'] = buildings['request_area_top_right'].apply(geometry.mapping)
+        return  buildings
+
     def __save_buildings(self, buildings):
+        buildings = self.__mapToGeoJson(buildings)
         result = self.__buildings.insert_many(buildings.to_dict('records'))
         return result
 
@@ -45,14 +54,23 @@ class BuildingService:
         result = self.__request_areas.insert(request_area)
         return result
 
+    def __addRequestAreaToBuildings(self, buildings, bottom_left: Point, top_right: Point):
+        buildings['request_area_bottom_left'] = bottom_left
+        buildings['request_area_top_right'] = top_right
+        return buildings
+
     def __prepare_buildings(self, bottom_left: Point, top_right: Point):
         building_df_creator = BuildingsGetter()
         buildings = building_df_creator.get_df(bottom_left.x, bottom_left.y, top_right.x, top_right.y)
-        buildings['geometry'] = buildings['geometry'].apply(geometry.mapping)
-        buildings['request_area_bottom_left'] = bottom_left
-        buildings['request_area_top_right'] = top_right
-        buildings['request_area_bottom_left'] = buildings['request_area_bottom_left'].apply(geometry.mapping)
-        buildings['request_area_top_right'] = buildings['request_area_top_right'].apply(geometry.mapping)
+        if (buildings.shape[0] == 0):
+            raise ProcessingException("buildings are empty")
+        buildings = self.__addRequestAreaToBuildings(buildings, bottom_left, top_right)
+
+
+        # TODO: add code to enrich buildings object with additional columns, like
+        # TODO: buildings = new WeatherService(buildings).enrich()
+        # TODO: or something like that
+
         return buildings
 
     def __get_buildings(self, existing_bottom_left: Point, existing_top_right: Point,

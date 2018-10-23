@@ -1,16 +1,21 @@
 from flask_pymongo import PyMongo
 from pymongo import GEOSPHERE
 from flask_pymongo.wrappers import Collection
-from scripts.buildings import BuildingsGetter
+from scripts.buildings import BuildingsGetter, ShopsGetter
 from shapely import geometry
 from shapely.geometry import Point
 
 from utils.custom_exceptions import ProcessingException
 
+SHOPS_RADIUS = 0.001  # in degrees
+
 
 class BuildingService:
     __BUILDINGS_COLLECTION_NAME = 'buildings'
     __REQUEST_AREAS_COLLECTION_NAME = 'request-areas'
+
+    buildings_getter = BuildingsGetter()
+    shops_getter = ShopsGetter()
 
     def __init__(self, mongo: PyMongo):
         self.__request_areas: Collection = mongo.db[self.__REQUEST_AREAS_COLLECTION_NAME]
@@ -57,19 +62,49 @@ class BuildingService:
     def __addRequestAreaToBuildings(self, buildings, bottom_left: Point, top_right: Point):
         buildings['request_area_bottom_left'] = bottom_left
         buildings['request_area_top_right'] = top_right
+
+        return buildings
+
+    def _enrich_buildings_with_shops(self, buildings, bottom_left, top_right):
+        shops = self.shops_getter.get_df(
+            bottom_left.x, bottom_left.y, top_right.x, top_right.y
+        )
+
+        def closes_shop(geometry):
+            def distance(point):
+                return point.distance(geometry)
+
+            return shops['geometry'].apply(distance).min()
+
+        def shops_count(geometry):
+            def distance(point):
+                return point.distance(geometry)
+
+            distances = shops['geometry'].apply(distance)
+
+            return len(distances[distances < SHOPS_RADIUS])
+
+        buildings['closes_shop'] = buildings['geometry'].apply(closes_shop)
+        buildings['shops_count'] = buildings['geometry'].apply(shops_count)
+
         return buildings
 
     def __prepare_buildings(self, bottom_left: Point, top_right: Point):
-        building_df_creator = BuildingsGetter()
-        buildings = building_df_creator.get_df(bottom_left.x, bottom_left.y, top_right.x, top_right.y)
+
+        buildings = self.buildings_getter.get_df(
+            bottom_left.x, bottom_left.y, top_right.x, top_right.y
+        )
+
         if (buildings.shape[0] == 0):
             raise ProcessingException("buildings are empty")
-        buildings = self.__addRequestAreaToBuildings(buildings, bottom_left, top_right)
 
+        buildings = self.__addRequestAreaToBuildings(
+            buildings, bottom_left, top_right
+        )
 
-        # TODO: add code to enrich buildings object with additional columns, like
-        # TODO: buildings = new WeatherService(buildings).enrich()
-        # TODO: or something like that
+        buildings = self._enrich_buildings_with_shops(
+           buildings, bottom_left, top_right
+        )
 
         return buildings
 

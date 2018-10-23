@@ -1,7 +1,6 @@
 from flask_pymongo import PyMongo
 from pymongo import GEOSPHERE
 from flask_pymongo.wrappers import Collection
-from scripts.buildings import BuildingsGetter
 from scripts.air_condition import AirConditionGetter
 from scripts.buildings import BuildingsGetter, ShopsGetter
 from shapely import geometry
@@ -18,6 +17,7 @@ class BuildingService:
 
     buildings_getter = BuildingsGetter()
     shops_getter = ShopsGetter()
+    air_condition_getter = AirConditionGetter()
 
     def __init__(self, mongo: PyMongo):
         self.__request_areas: Collection = mongo.db[self.__REQUEST_AREAS_COLLECTION_NAME]
@@ -61,12 +61,6 @@ class BuildingService:
         result = self.__request_areas.insert(request_area)
         return result
 
-    def __prepare_buildings(self, bottom_left: Point, top_right: Point):
-        building_df_creator = BuildingsGetter()
-        air_condition_net = AirConditionGetter()
-        air_condition_net.get_df(bottom_left.x, bottom_left.y, top_right.x, top_right.y)
-        buildings = building_df_creator.get_df(bottom_left.x, bottom_left.y, top_right.x, top_right.y)
-        buildings['geometry'] = buildings['geometry'].apply(geometry.mapping)
     def __addRequestAreaToBuildings(self, buildings, bottom_left: Point, top_right: Point):
         buildings['request_area_bottom_left'] = bottom_left
         buildings['request_area_top_right'] = top_right
@@ -97,13 +91,27 @@ class BuildingService:
 
         return buildings
 
+    def _enrich_buildings_with_air_condition(self, buildings, bottom_left, top_right):
+        air_condition_df = self.air_condition_getter.get_df(
+            bottom_left.x, bottom_left.y, top_right.x, top_right.y
+        )
+
+        def closest_air_quality_point(geometry):
+            def distance(point):
+                return point.distance(geometry)
+
+            return air_condition_df['geometry'].apply(distance).min()
+
+        buildings['air_quality'] = buildings['geometry'].apply(closest_air_quality_point)
+        return buildings
+
     def __prepare_buildings(self, bottom_left: Point, top_right: Point):
 
         buildings = self.buildings_getter.get_df(
             bottom_left.x, bottom_left.y, top_right.x, top_right.y
         )
 
-        if (buildings.shape[0] == 0):
+        if buildings.shape[0] == 0:
             raise ProcessingException("buildings are empty")
 
         buildings = self.__addRequestAreaToBuildings(
@@ -112,6 +120,10 @@ class BuildingService:
 
         buildings = self._enrich_buildings_with_shops(
            buildings, bottom_left, top_right
+        )
+
+        buildings = self._enrich_buildings_with_air_condition(
+            buildings, bottom_left, top_right
         )
 
         return buildings

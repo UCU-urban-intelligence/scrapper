@@ -2,7 +2,11 @@ import sys
 import requests
 from random import randint
 from utils import create_net
+from shapely import geometry
+import geopandas as gpd
 import json
+
+GEOM_COLUMN = 'geometry'
 
 
 class AirConditionGetter:
@@ -21,15 +25,14 @@ class AirConditionGetter:
         "186a594cfae44136b7ce52bddac4b4a7"
     ]
 
-    NET_STAP = 0.01
+    NET_STEP = 0.01
 
     def get_df(self, lat1, lng1, lat2, lng2):
         print(lat1, lng1, lat2, lng2)
-        net = create_net(lat1, lng1, lat2, lng2, AirConditionGetter.NET_STAP)
+        net = create_net(lat1, lng1, lat2, lng2, AirConditionGetter.NET_STEP)
 
-        result = []
+        data = []
         for coordinates in net:
-            print(coordinates)
             api_key_for_request = AirConditionGetter.API_KEYS[randint(0, len(AirConditionGetter.API_KEYS) - 1)]
 
             response = requests.get(
@@ -42,12 +45,12 @@ class AirConditionGetter:
                 ]
             )
 
-            result.append({
-                "coordinates": [coordinates[0], coordinates[1]],
+            data.append({
+                GEOM_COLUMN: geometry.Point(coordinates[0], coordinates[1]),
                 "response": json.loads(response.text)
             })
 
-        return result
+        return gpd.GeoDataFrame(data, geometry=GEOM_COLUMN)
 
 
 if __name__ == '__main__':

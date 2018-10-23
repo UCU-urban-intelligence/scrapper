@@ -21,21 +21,21 @@ class BaseOverpassGetter:
     def _df_from_result(result):
         raise NotImplementedError()
 
-    def get_df(self, lat1, lng1, lat2, lng2):
+    def get_df(self, lon1, lat1, lon2, lat2):
         query = self.query.format(
-            lat1=lat1, lng1=lng1, lat2=lat2, lng2=lng2
+            lat1=lat1, lon1=lon1, lat2=lat2, lon2=lon2
         )
 
         result = self.api.query(query)
 
         logging.info('Got response for {}, {}, {}, {}'.format(
-            lat1, lng1, lat2, lng2
+            lon1, lat1, lon2, lat2
         ))
 
         df = self._df_from_result(result)
 
         logging.info('Created dataset for {}, {}, {}, {}'.format(
-            lat1, lng1, lat2, lng2
+            lon1, lat1, lon2, lat2
         ))
 
         return df
@@ -43,8 +43,8 @@ class BaseOverpassGetter:
 
 class BuildingsGetter(BaseOverpassGetter):
     base_query = """
-        way["building"]({lat1}, {lng1}, {lat2}, {lng2});
-        relation["building"]({lat1}, {lng1}, {lat2}, {lng2});
+        way["building"]({lat1}, {lon1}, {lat2}, {lon2});
+        relation["building"]({lat1}, {lon1}, {lat2}, {lon2});
     """
     col_names = ['addr:housenumber', 'addr:street', 'amenity', 'building',
                  'description', 'geometry', 'height', 'name', 'roof:shape']
@@ -166,11 +166,11 @@ class BuildingsGetter(BaseOverpassGetter):
 
 class ShopsGetter(BaseOverpassGetter):
     base_query = """
-        node["shop"="convenience"]({lat1}, {lng1}, {lat2}, {lng2});
-        node["shop"="supermarket"]({lat1}, {lng1}, {lat2}, {lng2});
-        node["amenity"="cafe"]({lat1}, {lng1}, {lat2}, {lng2});
-        node["amenity"="fast_food"]({lat1}, {lng1}, {lat2}, {lng2});
-        node["amenity"="restaurant"]({lat1}, {lng1}, {lat2}, {lng2});
+        node["shop"="convenience"]({lat1}, {lon1}, {lat2}, {lon2});
+        node["shop"="supermarket"]({lat1}, {lon1}, {lat2}, {lon2});
+        node["amenity"="cafe"]({lat1}, {lon1}, {lat2}, {lon2});
+        node["amenity"="fast_food"]({lat1}, {lon1}, {lat2}, {lon2});
+        node["amenity"="restaurant"]({lat1}, {lon1}, {lat2}, {lon2});
     """
 
     def _df_from_result(self, result):

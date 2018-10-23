@@ -1,6 +1,8 @@
 from flask_pymongo import PyMongo
 from pymongo import GEOSPHERE
 from flask_pymongo.wrappers import Collection
+from scripts.buildings import BuildingsGetter
+from scripts.air_condition import AirConditionGetter
 from scripts.buildings import BuildingsGetter, ShopsGetter
 from shapely import geometry
 from shapely.geometry import Point
@@ -59,6 +61,12 @@ class BuildingService:
         result = self.__request_areas.insert(request_area)
         return result
 
+    def __prepare_buildings(self, bottom_left: Point, top_right: Point):
+        building_df_creator = BuildingsGetter()
+        air_condition_net = AirConditionGetter()
+        air_condition_net.get_df(bottom_left.x, bottom_left.y, top_right.x, top_right.y)
+        buildings = building_df_creator.get_df(bottom_left.x, bottom_left.y, top_right.x, top_right.y)
+        buildings['geometry'] = buildings['geometry'].apply(geometry.mapping)
     def __addRequestAreaToBuildings(self, buildings, bottom_left: Point, top_right: Point):
         buildings['request_area_bottom_left'] = bottom_left
         buildings['request_area_top_right'] = top_right

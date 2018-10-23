@@ -5,7 +5,7 @@ from utils import create_net
 import json
 
 
-class AirCondition:
+class AirConditionGetter:
     """
         For more info about API go here:
         https://breezometer.com/air-quality-api/
@@ -21,20 +21,19 @@ class AirCondition:
         "186a594cfae44136b7ce52bddac4b4a7"
     ]
 
-    def __init__(self):
-        pass
+    NET_STAP = 0.01
 
     def get_df(self, lat1, lng1, lat2, lng2):
         print(lat1, lng1, lat2, lng2)
-        net = create_net(lat1, lng1, lat2, lng2, 0.1)
+        net = create_net(lat1, lng1, lat2, lng2, AirConditionGetter.NET_STAP)
 
         result = []
         for coordinates in net:
             print(coordinates)
-            api_key_for_request = AirCondition.API_KEYS[randint(0, len(AirCondition.API_KEYS) - 1)]
+            api_key_for_request = AirConditionGetter.API_KEYS[randint(0, len(AirConditionGetter.API_KEYS) - 1)]
 
             response = requests.get(
-                AirCondition.API_PATH,
+                AirConditionGetter.API_PATH,
                 [
                     ("lat", coordinates[0]),
                     ("lon", coordinates[1]),
@@ -52,7 +51,7 @@ class AirCondition:
 
 
 if __name__ == '__main__':
-    ac = AirCondition()
+    ac = AirConditionGetter()
     bbox = map(float, sys.argv[1:])
 
     result = ac.get_df(*bbox)

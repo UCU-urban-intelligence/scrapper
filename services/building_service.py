@@ -3,6 +3,7 @@ from pymongo import GEOSPHERE
 from flask_pymongo.wrappers import Collection
 from scripts.air_condition import AirConditionGetter
 from scripts.buildings import BuildingsGetter, ShopsGetter
+from services.weather_service import WeatherService
 from shapely import geometry
 from shapely.geometry import Point
 
@@ -128,6 +129,10 @@ class BuildingService:
         )
 
         # TODO: ALL ENRICHMENT IS HERE
+
+        buildings = WeatherService.enrich_buildings_with_weather(
+            buildings, bottom_left, top_right
+        )
 
         return buildings
 

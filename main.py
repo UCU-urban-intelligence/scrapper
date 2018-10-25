@@ -1,3 +1,5 @@
+import time
+import traceback
 from flask import Flask, request
 from flask_pymongo import PyMongo
 
@@ -5,7 +7,6 @@ from config.mongo import MONGO_PORT, MONGO_DB
 from utils.json_encoder import JSONEncoder
 from services.building_service import BuildingService
 from utils.custom_exceptions import ProcessingException
-import traceback
 
 app = Flask(__name__)
 
@@ -21,12 +22,13 @@ app.json_encoder = JSONEncoder
 @app.route('/processing', methods=['POST'])
 def processing():
     try:
+        start = time.time()
         data = request.get_json()
         building_service = BuildingService(mongo)
         buildings = building_service.get_buildings(data['bbox'])
 
         # TODO: buildings are ready to be shown as heatmap
-        return str(buildings.count())
+        return "Buildings count: {0}\r\nTime spent: {1} s".format(str(buildings.count()), time.time() - start)
     except ProcessingException as exc:
         return "Custom exception: {0}".format(exc.message)
     except Exception as exc:

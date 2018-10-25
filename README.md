@@ -18,7 +18,7 @@ Like [-66.577148,-30.278044,-50.756836,-22.034730]
 
 ## OSM data
 
-Comand to get geometry data from OSM using bbox:
+Command to get geometry data from OSM using bbox:
 
 `$ python scripts/buildings.py <lat1> <lng1> <lat2> <lng2>`
 
@@ -27,3 +27,7 @@ E. g. (Kyiv buildings):
 `$ python scripts/buildings.py 50.303376 30.217896 50.602416 30.841370`
 
 Output will be located in `out.geojson`
+
+### P.S.
+If you have some problems with installing dependencies try to call `sudo apt-get install python-dev`.
+For more info check look [here](https://github.com/MeetMe/newrelic-plugin-agent/issues/151)

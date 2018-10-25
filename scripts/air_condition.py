@@ -27,9 +27,8 @@ class AirConditionGetter:
 
     NET_STEP = 0.01
 
-    def get_df(self, lat1, lng1, lat2, lng2):
-        print(lat1, lng1, lat2, lng2)
-        net = create_net(lat1, lng1, lat2, lng2, AirConditionGetter.NET_STEP)
+    def get_df(self, lng1, lat1, lng2, lat2):
+        net = create_net(lng1, lat1, lng2, lat2, AirConditionGetter.NET_STEP)
 
         data = []
         for coordinates in net:
@@ -38,8 +37,8 @@ class AirConditionGetter:
             response = requests.get(
                 AirConditionGetter.API_PATH,
                 [
-                    ("lat", coordinates[0]),
-                    ("lon", coordinates[1]),
+                    ("lon", coordinates[0]),
+                    ("lat", coordinates[1]),
                     ("key", api_key_for_request),
                     ("fields", "breezometer_aqi")
                 ]
@@ -47,7 +46,7 @@ class AirConditionGetter:
 
             data.append({
                 GEOM_COLUMN: geometry.Point(coordinates[0], coordinates[1]),
-                "response": json.loads(response.text)
+                "aqi": json.loads(response.text)['breezometer_aqi']
             })
 
         return gpd.GeoDataFrame(data, geometry=GEOM_COLUMN)

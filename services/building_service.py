@@ -94,15 +94,16 @@ class BuildingService:
         return buildings
 
     def _enrich_buildings_with_air_condition(self, buildings, bottom_left, top_right):
-        air_condition_df = self.air_condition_getter.get_df(
+        df = self.air_condition_getter.get_df(
             bottom_left.x, bottom_left.y, top_right.x, top_right.y
         )
 
         def closest_air_quality_point(geometry):
             def distance(point):
                 return point.distance(geometry)
-
-            return air_condition_df['geometry'].apply(distance).min()
+            df['distance'] = df['geometry'].apply(distance)
+            min_dist_row = df.ix[df['distance'].idxmin()]
+            return min_dist_row['aqi']
 
         buildings['air_quality'] = buildings['geometry'].apply(closest_air_quality_point)
         return buildings
@@ -116,20 +117,24 @@ class BuildingService:
         if buildings.shape[0] == 0:
             raise ProcessingException("buildings are empty")
 
+        print("__preProcessBuildings")
+
         buildings = self.__preProcessBuildings(
             buildings, bottom_left, top_right
         )
 
+        print("_enrich_buildings_with_shops")
         buildings = self._enrich_buildings_with_shops(
            buildings, bottom_left, top_right
         )
 
+        print("_enrich_buildings_with_air_condition")
         buildings = self._enrich_buildings_with_air_condition(
             buildings, bottom_left, top_right
         )
 
         # TODO: ALL ENRICHMENT IS HERE
-
+        print("enrich_buildings_with_weather")
         buildings = WeatherService.enrich_buildings_with_weather(
             buildings, bottom_left, top_right
         )

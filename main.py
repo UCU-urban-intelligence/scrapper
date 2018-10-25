@@ -5,6 +5,7 @@ from config.mongo import MONGO_PORT, MONGO_DB
 from utils.json_encoder import JSONEncoder
 from services.building_service import BuildingService
 from utils.custom_exceptions import ProcessingException
+import traceback
 
 app = Flask(__name__)
 
@@ -29,7 +30,7 @@ def processing():
     except ProcessingException as exc:
         return "Custom exception: {0}".format(exc.message)
     except Exception as exc:
-        return "System exception: {0}".format(exc)
+        return "System exception: {0}\r\nStack trace: {1}".format(exc, traceback.format_exc())
 
 
 if __name__ == '__main__':

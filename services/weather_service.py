@@ -27,11 +27,20 @@ class WeatherService:
 
             return closest_point['response']
 
-        def weather(geometry):
-            weather_point = nearest_point(geometry, weather_net)
-            return weather_point
+        def weather(row):
+            weather_point = nearest_point(row['geometry'], weather_net)
+            t = weather_point['temperature']
+            c = weather_point['cloud_cover']
+            h = weather_point['humidity']
 
-        buildings['weather'] = buildings['geometry'].apply(weather)
+            return t, c, h
+
+        # import pdb; pdb.set_trace()
+        buildings['temperature'], buildings['cloud_cover'], buildings['humidity'] =zip(*buildings.apply(weather, axis=1))
+        # buildings['cloud_cover'] = b
+
+        # (buildings['sum'], buildings['difference'], buildings['difference2']) = buildings.apply(
+        #     lambda row: weather(row), axis=1)
 
         return buildings
 

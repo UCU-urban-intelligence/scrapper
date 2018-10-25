@@ -1,7 +1,7 @@
 import sys
 import requests
 from random import randint
-from utils import create_net
+from utils.net import create_net, net_by_quantity
 from shapely import geometry
 import geopandas as gpd
 import json
@@ -26,10 +26,12 @@ class AirConditionGetter:
     ]
 
     NET_STEP = 0.01
+    MAX_QTY = 36
 
     def get_df(self, lng1, lat1, lng2, lat2):
-        net = create_net(lng1, lat1, lng2, lat2, AirConditionGetter.NET_STEP)
-
+        net = create_net(lng1, lat1, lng2, lat2, self.NET_STEP)
+        if len(net) > self.MAX_QTY:
+            net = net_by_quantity(lng1, lat1, lng2, lat2, self.MAX_QTY)
         data = []
         for coordinates in net:
             api_key_for_request = AirConditionGetter.API_KEYS[randint(0, len(AirConditionGetter.API_KEYS) - 1)]

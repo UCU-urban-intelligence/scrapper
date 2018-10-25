@@ -3,7 +3,7 @@ import json
 from datetime import datetime as dt
 import requests
 from random import randint
-from utils import create_net
+from utils.net import create_net, net_by_quantity
 
 
 class DarkSkyWeather:
@@ -22,17 +22,6 @@ class DarkSkyWeather:
     
     def __init__(self):
         pass
-
-    @staticmethod
-    def net_by_quantity(lat0, lng0, lat1, lng1, qty=36):
-        steps = round(qty**(1/2)) + 1
-        step_lat = (lat1 - lat0) / steps
-        step_lng = (lng1 - lng0) / steps
-        net = []
-        for i in range(1, steps):
-            for j in range(1, steps):
-                net.append((lat0 + i * step_lat, lng0 + j * step_lng))
-        return net
 
     def request(self, lat, lng, time):
         key = self.API_KEYS[randint(0, len(self.API_KEYS) - 1)]
@@ -61,7 +50,7 @@ class DarkSkyWeather:
         t = round(dt.now().timestamp()) - year
         net = create_net(lat0, lng0, lat1, lng1, self.NET_STEP)
         if len(net) > self.MAX_QTY:
-            net = self.net_by_quantity(lat0, lng0, lat1, lng1, self.MAX_QTY)
+            net = net_by_quantity(lat0, lng0, lat1, lng1, self.MAX_QTY)
 
         for coordinates in net:
             data_item = {

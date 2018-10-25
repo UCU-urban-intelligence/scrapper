@@ -1,1 +1,1 @@
-from .create_net import create_net
+from .net import create_net

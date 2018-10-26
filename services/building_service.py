@@ -1,3 +1,4 @@
+import logging
 from flask_pymongo import PyMongo
 from pymongo import GEOSPHERE
 from flask_pymongo.wrappers import Collection
@@ -9,7 +10,9 @@ from shapely.geometry import Point
 
 from utils.custom_exceptions import ProcessingException
 
-SHOPS_RADIUS = 0.001  # in degrees
+SHOPS_RADIUS = 500  # meters
+CARTESIAN_CRS = {'init': 'epsg:3857'}
+EQUAL_AREA_CRS = {'init': 'epsg:3035'}
 
 
 class BuildingService:
@@ -69,16 +72,28 @@ class BuildingService:
 
         return buildings
 
+    def _enrich_buildings_with_area(self, buildings):
+        cartesian_buildings = buildings['geometry'].to_crs(EQUAL_AREA_CRS)
+
+        buildings['area'] = cartesian_buildings.apply(lambda x: x.area)
+
+        return buildings
+
     def _enrich_buildings_with_shops(self, buildings, bottom_left, top_right):
         shops = self.shops_getter.get_df(
             bottom_left.x, bottom_left.y, top_right.x, top_right.y
         )
 
+        if shops is None or shops.empty:
+            buildings['closes_shop'] = 2  # very far
+            buildings['shops_count'] = 0
+            return buildings
+
         def closes_shop(geometry):
             def distance(point):
                 return point.distance(geometry)
 
-            return shops['geometry'].apply(distance).min()
+            return int(shops['geometry'].apply(distance).min())
 
         def shops_count(geometry):
             def distance(point):
@@ -88,8 +103,12 @@ class BuildingService:
 
             return len(distances[distances < SHOPS_RADIUS])
 
-        buildings['closes_shop'] = buildings['geometry'].apply(closes_shop)
-        buildings['shops_count'] = buildings['geometry'].apply(shops_count)
+        shops = shops.to_crs(CARTESIAN_CRS)
+        cartesian_buildings = buildings['geometry'].to_crs(CARTESIAN_CRS)
+
+        buildings['closes_shop'] = cartesian_buildings.apply(closes_shop)
+
+        buildings['shops_count'] = cartesian_buildings.apply(shops_count)
 
         return buildings
 
@@ -117,24 +136,26 @@ class BuildingService:
         if buildings.shape[0] == 0:
             raise ProcessingException("buildings are empty")
 
-        print("__preProcessBuildings")
-
         buildings = self.__preProcessBuildings(
             buildings, bottom_left, top_right
         )
 
-        print("_enrich_buildings_with_shops")
+        logging.info('Started enrichment with shops')
         buildings = self._enrich_buildings_with_shops(
            buildings, bottom_left, top_right
         )
 
-        print("_enrich_buildings_with_air_condition")
+        logging.info('Started enrichment with area')
+        buildings = self._enrich_buildings_with_area(buildings)
+
+        logging.info('Started enrichment with air condiditon')
+
         buildings = self._enrich_buildings_with_air_condition(
             buildings, bottom_left, top_right
         )
 
-        # TODO: ALL ENRICHMENT IS HERE
-        print("enrich_buildings_with_weather")
+        logging.info('Started enrichment with weather data')
+
         buildings = WeatherService.enrich_buildings_with_weather(
             buildings, bottom_left, top_right
         )
@@ -186,8 +207,16 @@ class BuildingService:
         if existing_bottom_left and existing_top_right:
             buildings = self.__get_buildings(existing_bottom_left, existing_top_right, bottom_left, top_right)
         else:
+            logging.info('Buildings was not found in db')
             buildings = self.__prepare_buildings(bottom_left, top_right)
+            logging.info('Prepeared buildngs')
+
             self.__save_buildings(buildings)
+            logging.info('Saved buildngs')
+
             self.__save_request_area(bottom_left, top_right)
+            logging.info('Saved request_area')
+
             buildings = self.__get_buildings(bottom_left, top_right)
+            logging.info('Got buildngs')
         return buildings

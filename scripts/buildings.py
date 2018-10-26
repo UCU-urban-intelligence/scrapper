@@ -9,6 +9,8 @@ from shapely import geometry
 GEOM_COLUMN = 'geometry'
 DEFAULT_HEIGHT = 15
 
+WGS84_CRS = {'init': 'epsg:4326'}
+
 
 class BaseOverpassGetter:
     query_template = '({});  out body; >; out skel qt;'
@@ -47,10 +49,9 @@ class BuildingsGetter(BaseOverpassGetter):
         relation["building"]({lat1}, {lon1}, {lat2}, {lon2});
     """
     col_names = ['addr:housenumber', 'addr:street', 'amenity', 'building',
-                 'description', 'geometry', 'height', 'name', 'roof:shape']
+                 'description', 'geometry', 'height', 'name', 'area']
 
-    num_cols = ['building:levels', 'height', 'building:height', 'roof:angle',
-                'roof:height']
+    num_cols = ['building:levels', 'height', 'building:height']
 
     @staticmethod
     def _get_nodes_points(nodes):
@@ -160,7 +161,7 @@ class BuildingsGetter(BaseOverpassGetter):
 
         return gpd.GeoDataFrame(
             ways_data + relations_data, columns=self.col_names,
-            geometry=GEOM_COLUMN
+            geometry=GEOM_COLUMN, crs=WGS84_CRS
         )
 
 
@@ -184,7 +185,8 @@ class ShopsGetter(BaseOverpassGetter):
 
             data.append(row)
 
-        return gpd.GeoDataFrame(data, geometry=GEOM_COLUMN)
+        return gpd.GeoDataFrame(data, geometry=GEOM_COLUMN, crs=WGS84_CRS) \
+            if data else None
 
 
 logging.basicConfig(

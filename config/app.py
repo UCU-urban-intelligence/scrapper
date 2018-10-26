@@ -1,0 +1,1 @@
+FORBID_BIG_BBOX = True

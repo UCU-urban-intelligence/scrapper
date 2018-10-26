@@ -3,6 +3,8 @@ import logging
 from flask_pymongo import PyMongo
 from pymongo import GEOSPHERE
 from flask_pymongo.wrappers import Collection
+
+from config.app import FORBID_BIG_BBOX
 from scripts.air_condition import AirConditionGetter
 from scripts.buildings import BuildingsGetter, ShopsGetter
 from services.weather_service import WeatherService
@@ -204,13 +206,28 @@ class BuildingService:
 
         return buildings
 
+    def __bbox_validation(self, bottom_left: Point, top_right: Point):
+        if FORBID_BIG_BBOX:
+            x_range = top_right.x - bottom_left.x
+            y_range = top_right.y - bottom_left.y
+            sum_range = x_range + y_range
+            if sum_range > 0.15:
+                raise ProcessingException(
+                    "Box is too big. (x2 - x1) + (y2 - y1) must be <= 0.15\r\n"
+                    "Currently x2 - x1 = {0}\r\n"
+                    "y2 - y1 = {1}\r\n"
+                    "Sum = {2}".format(x_range, y_range, sum_range)
+                )
+
     def get_buildings(self, bounds):
         bottom_left = Point(bounds[0], bounds[1])
         top_right = Point(bounds[2], bounds[3])
+
         (existing_bottom_left, existing_top_right) = self.__get_existing_bounds(bottom_left, top_right)
         if existing_bottom_left and existing_top_right:
             buildings = self.__get_buildings(existing_bottom_left, existing_top_right, bottom_left, top_right)
         else:
+            self.__bbox_validation(bottom_left, top_right)
             logging.info('Buildings was not found in db')
             buildings = self.__prepare_buildings(bottom_left, top_right)
             logging.info('Prepeared buildngs')

@@ -1,3 +1,4 @@
+import pandas as pd
 import logging
 from flask_pymongo import PyMongo
 from pymongo import GEOSPHERE
@@ -85,30 +86,33 @@ class BuildingService:
         )
 
         if shops is None or shops.empty:
-            buildings['closes_shop'] = 2  # very far
+            buildings['closest_shop'] = 2  # very far
             buildings['shops_count'] = 0
             return buildings
 
-        def closes_shop(geometry):
-            def distance(point):
-                return point.distance(geometry)
-
-            return int(shops['geometry'].apply(distance).min())
-
-        def shops_count(geometry):
+        def get_shops(geometry):
             def distance(point):
                 return point.distance(geometry)
 
             distances = shops['geometry'].apply(distance)
 
-            return len(distances[distances < SHOPS_RADIUS])
+            closest_shop = int(distances.min())
+            shops_amount = len(distances[distances < SHOPS_RADIUS])
+
+            return {
+                'closest_shop': closest_shop,
+                'shops_amount': shops_amount
+            }
 
         shops = shops.to_crs(CARTESIAN_CRS)
-        cartesian_buildings = buildings['geometry'].to_crs(CARTESIAN_CRS)
+        centroids = buildings['geometry'].to_crs(CARTESIAN_CRS)\
+            .apply(lambda x: x.centroid)
 
-        buildings['closes_shop'] = cartesian_buildings.apply(closes_shop)
+        logging.info('Created buildings in cartesian projection')
 
-        buildings['shops_count'] = cartesian_buildings.apply(shops_count)
+        new_columns = pd.DataFrame(list(centroids.apply(get_shops)))
+        buildings[['closest_shop', 'shops_amount']] = \
+            new_columns[['closest_shop', 'shops_amount']]
 
         return buildings
 

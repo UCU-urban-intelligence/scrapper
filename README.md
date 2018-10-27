@@ -6,9 +6,10 @@ routes: <br/>
 
 * localhost:8000/processing POST <br/>
 ```json
-  {
-    "bbox": []
-  }
+{
+    "id": "Kyiv1",
+    "bbox": [-79.486170,43.694577,-79.458413,43.713523]
+}
 ```
    <br />
 NOTE: <br/>

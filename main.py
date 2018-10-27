@@ -25,7 +25,7 @@ def processing():
         start = time.time()
         data = request.get_json()
         building_service = BuildingService(mongo)
-        buildings = building_service.get_buildings(data['bbox'])
+        buildings = building_service.get_buildings(data)
 
         # TODO: buildings are ready to be shown as heatmap
         return "Buildings count: {0}\r\nTime spent: {1} s".format(str(buildings.count()), time.time() - start)

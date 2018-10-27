@@ -1,12 +1,14 @@
+import pyproj
+
 import pandas as pd
 import logging
 from flask_pymongo import PyMongo
 from pymongo import GEOSPHERE
 from flask_pymongo.wrappers import Collection
 
-from config.app import FORBID_BIG_BBOX
+from config.app import BBOX_AREA_RESTRICTION_SIZE
 from scripts.air_condition import AirConditionGetter
-from scripts.buildings import BuildingsGetter, ShopsGetter
+from scripts.buildings import BuildingsGetter, ShopsGetter, WGS84_CRS
 from services.weather_service import WeatherService
 from shapely import geometry
 from shapely.geometry import Point
@@ -68,10 +70,11 @@ class BuildingService:
         result = self.__request_areas.insert(request_area)
         return result
 
-    def __preProcessBuildings(self, buildings, bottom_left: Point, top_right: Point):
+    def __preProcessBuildings(self, buildings, bottom_left: Point, top_right: Point, bbox_id=""):
         buildings['building_centroid'] = buildings['geometry'].centroid
         buildings['request_area_bottom_left'] = bottom_left
         buildings['request_area_top_right'] = top_right
+        buildings['bbox_id'] = bbox_id
 
         return buildings
 
@@ -133,7 +136,7 @@ class BuildingService:
         buildings['air_quality'] = buildings['geometry'].apply(closest_air_quality_point)
         return buildings
 
-    def __prepare_buildings(self, bottom_left: Point, top_right: Point):
+    def __prepare_buildings(self, bottom_left: Point, top_right: Point, bbox_id=""):
 
         buildings = self.buildings_getter.get_df(
             bottom_left.x, bottom_left.y, top_right.x, top_right.y
@@ -143,7 +146,7 @@ class BuildingService:
             raise ProcessingException("buildings are empty")
 
         buildings = self.__preProcessBuildings(
-            buildings, bottom_left, top_right
+            buildings, bottom_left, top_right, bbox_id
         )
 
         logging.info('Started enrichment with shops')
@@ -207,29 +210,33 @@ class BuildingService:
         return buildings
 
     def __bbox_validation(self, bottom_left: Point, top_right: Point):
-        if FORBID_BIG_BBOX:
-            x_range = top_right.x - bottom_left.x
-            y_range = top_right.y - bottom_left.y
-            sum_range = x_range + y_range
-            if sum_range > 0.15:
+            bottom_left_mx, bottom_left_my = pyproj.transform(pyproj.Proj(WGS84_CRS), pyproj.Proj(CARTESIAN_CRS), bottom_left.x, bottom_left.y)
+            top_right_mx, top_right_my = pyproj.transform(pyproj.Proj(WGS84_CRS), pyproj.Proj(CARTESIAN_CRS), top_right.x, top_right.y)
+            range_x = top_right_mx - bottom_left_mx
+            range_y = top_right_my - bottom_left_my
+            area = range_x * range_y
+
+            if area > BBOX_AREA_RESTRICTION_SIZE:
                 raise ProcessingException(
-                    "Box is too big. (x2 - x1) + (y2 - y1) must be <= 0.15\r\n"
-                    "Currently x2 - x1 = {0}\r\n"
-                    "y2 - y1 = {1}\r\n"
-                    "Sum = {2}".format(x_range, y_range, sum_range)
+                    "Box is too big. Area must be <= {3:.2e} m^2\r\n"
+                    "Currently x2 - x1 = {0:.2e} m\r\n"
+                    "y2 - y1 = {1:.2e} m\r\n"
+                    "Area = {2:.2e} m^2".format(range_x, range_y, area, BBOX_AREA_RESTRICTION_SIZE)
                 )
 
-    def get_buildings(self, bounds):
+    def get_buildings(self, data):
+        bbox_id = data["id"] if "id" in data else ""
+        bounds = data["bbox"]
         bottom_left = Point(bounds[0], bounds[1])
         top_right = Point(bounds[2], bounds[3])
 
         (existing_bottom_left, existing_top_right) = self.__get_existing_bounds(bottom_left, top_right)
-        if existing_bottom_left and existing_top_right:
+        if existing_bottom_left and existing_top_right and False:
             buildings = self.__get_buildings(existing_bottom_left, existing_top_right, bottom_left, top_right)
         else:
             self.__bbox_validation(bottom_left, top_right)
             logging.info('Buildings was not found in db')
-            buildings = self.__prepare_buildings(bottom_left, top_right)
+            buildings = self.__prepare_buildings(bottom_left, top_right, bbox_id)
             logging.info('Prepeared buildngs')
 
             self.__save_buildings(buildings)

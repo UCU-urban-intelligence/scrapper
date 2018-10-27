@@ -11,6 +11,39 @@ DEFAULT_HEIGHT = 15
 
 WGS84_CRS = {'init': 'epsg:4326'}
 
+INAPROPRIATE_TYPES = ['static_caravan', 'kiosk', 'religious', 'cathedral',
+                      'chapel', 'church', 'mosque', 'temple', 'synagogue',
+                      'shrine', 'bakehouse', 'stadium', 'train_station',
+                      'grandstand', 'toilets', 'bridge', 'bunker', 'bunker',
+                      'carport', 'conservatory', 'construction', 'cowshed',
+                      'farm_auxiliary', 'garage', 'garages', 'garbage_shed',
+                      'greenhouse', 'hangar', '	hut', '	roof', 'shed', 'sty',
+                      'water_tower', 'ruins', 'transformer_tower', 'stable']
+
+
+FLAT_ROOFS = ['flat', 'flat_with_terrace', 'flat_with_two_terraces',
+              'flat_with_three_terraces', 'flat_with_four_terraces']
+
+GABLED_ROOFS = ['gabled	gabled_height_moved', 'side_hipped', 'half_hipped',
+                'hipped', 'pyramidal', 'double_skillion', 'triple_skillion',
+                'diagonal_pass', 'diagonal_pass', 'saltbox', 'double_saltbox',
+                'corner_saltbox', 'triple_saltbox', 'quadruple_saltbox',
+                'gambrel', 'mansard_onesided', 'mansard', 'thai_cutted',
+                'thai', 'pyramidal_diagonal', 'skilion_windmill',
+                'double_gabled', 'basilical', 'cross_gabled',
+                'basilical_five_aisled', 'apse_gabled', 'sawtoth', 'trapeze',
+                'gabled_row', 'round_row', 'wave', 'equal_hipped',
+                'equal_mansard', 'flat_mansard']
+
+ROUND_ROOFS = ['round', 'round_pyramidal', 'round_skillion', 'round_gabled',
+               'round_skillion_cutted', 'round_skillion_double_cutted',
+               'round_hipped', 'dome', 'dome_overlapped', 'cone	mansard_cone',
+               'double_mansard_cone', 'triple_mansard_cone', 'onion',
+               'hyperbolic_paraboloid', 'parabolic', 'hyperbolic_tower',
+               'elliptic_hyperboloid', 'ellipsoid_cutted',
+               'elliptic_paraboloid', 'tent', 'geodesic_dome',
+               'spherical_cutted']
+
 
 class BaseOverpassGetter:
     query_template = '({});  out body; >; out skel qt;'
@@ -48,10 +81,12 @@ class BuildingsGetter(BaseOverpassGetter):
         way["building"]({lat1}, {lon1}, {lat2}, {lon2});
         relation["building"]({lat1}, {lon1}, {lat2}, {lon2});
     """
-    col_names = ['addr:housenumber', 'addr:street', 'amenity', 'building',
-                 'description', 'geometry', 'height', 'name', 'area']
+    col_names = ['addr:housenumber', 'addr:street', 'type', 'geometry',
+                 'height', 'name', 'area', 'roof_type']
 
-    num_cols = ['building:levels', 'height', 'building:height']
+    num_cols = ['building:levels', 'height', 'building:height',
+                'building:eaves:levels', 'building:eaves:height',
+                'roof:height']
 
     @staticmethod
     def _get_nodes_points(nodes):
@@ -60,6 +95,19 @@ class BuildingsGetter(BaseOverpassGetter):
         return [
             [float(node.lon), float(node.lat)] for node in nodes
         ]
+
+    def _roof_type(self, row):
+        if row.get('building') in INAPROPRIATE_TYPES:
+            return 'inapropriate'
+
+        if row.get('roof:shape') in FLAT_ROOFS:
+            return 'flat'
+
+        if row.get('roof:shape') in GABLED_ROOFS or row.get('roof:ridge'):
+            return 'gabled'
+
+        if row.get('roof:shape') in ROUND_ROOFS:
+            return 'round'
 
     def _append_row_to_data(self, data, outer_points, inner_points=None,
                             tags=None):
@@ -80,20 +128,35 @@ class BuildingsGetter(BaseOverpassGetter):
                     row_data[key] = nums[0] if nums else 0.0
 
             if row_data.get('height') is None:
-                if row_data.get('building:height') is not None:
-                    row_data['height'] = row_data['building:height']
+                height = row_data.get('building:height',
+                                      row_data.get('building:height'))
 
-                elif row_data.get('building:levels') is not None:
-                    row_data['height'] = row_data['building:levels'] * 3 + 3
+                levels = row_data.get('building:levels',
+                                      row_data.get('building:eaves:levels'))
 
-                else:
-                    row_data['height'] = DEFAULT_HEIGHT
+                roof_height = row_data.get('roof:height', 0)
 
-            if row_data.get('building') == 'yes':
-                row_data['building'] = None
+                if levels and not height:
+                    height = levels * 3
+
+                elif not levels and not height:
+                    height = DEFAULT_HEIGHT
+
+                row_data['height'] = height + roof_height
+
+            if row_data.get('building', 'yes') == 'yes':
+                row_data['building'] = 'building'
+
+            row_data['type'] = row_data.pop('building')
+
+            try:
+                polygon = geometry.Polygon(outer_points, inner_points)
+            except Exception:
+                return None
 
             row_data.update({
-                GEOM_COLUMN: geometry.Polygon(outer_points, inner_points)
+                GEOM_COLUMN: polygon,
+                'roof_type': self._roof_type(row_data)
             })
 
             data.append(row_data)

@@ -169,6 +169,17 @@ class BuildingService:
             buildings, bottom_left, top_right
         )
 
+        out = buildings[['addr:housenumber', 'addr:street', 'type', 'geometry',
+                         'height', 'name', 'area', 'closest_shop',
+                         'shops_amount', 'roof_type', 'air_quality',
+                         'temperature', 'cloud_cover', 'humidity']]
+
+        # In case of DB fault
+        with open('out.geojson', 'w') as f:
+            f.write(out.to_json())
+
+        logging.info('Saved buildings to file')
+
         return buildings
 
     def __get_buildings(self, existing_bottom_left: Point, existing_top_right: Point,

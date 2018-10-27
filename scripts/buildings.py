@@ -11,14 +11,14 @@ DEFAULT_HEIGHT = 15
 
 WGS84_CRS = {'init': 'epsg:4326'}
 
-INAPROPRIATE_TYPES = ['static_caravan', 'kiosk', 'religious', 'cathedral',
-                      'chapel', 'church', 'mosque', 'temple', 'synagogue',
-                      'shrine', 'bakehouse', 'stadium', 'train_station',
-                      'grandstand', 'toilets', 'bridge', 'bunker', 'bunker',
-                      'carport', 'conservatory', 'construction', 'cowshed',
-                      'farm_auxiliary', 'garage', 'garages', 'garbage_shed',
-                      'greenhouse', 'hangar', '	hut', '	roof', 'shed', 'sty',
-                      'water_tower', 'ruins', 'transformer_tower', 'stable']
+INAPPROPRIATE_TYPES = ['static_caravan', 'kiosk', 'religious', 'cathedral',
+                       'chapel', 'church', 'mosque', 'temple', 'synagogue',
+                       'shrine', 'bakehouse', 'stadium', 'train_station',
+                       'grandstand', 'toilets', 'bridge', 'bunker', 'bunker',
+                       'carport', 'conservatory', 'construction', 'cowshed',
+                       'farm_auxiliary', 'garage', 'garages', 'garbage_shed',
+                       'greenhouse', 'hangar', 'hut', 'roof', 'shed', 'sty',
+                       'water_tower', 'ruins', 'transformer_tower', 'stable']
 
 
 FLAT_ROOFS = ['flat', 'flat_with_terrace', 'flat_with_two_terraces',
@@ -97,8 +97,8 @@ class BuildingsGetter(BaseOverpassGetter):
         ]
 
     def _roof_type(self, row):
-        if row.get('building') in INAPROPRIATE_TYPES:
-            return 'inapropriate'
+        if row.get('building') in INAPPROPRIATE_TYPES:
+            return 'inappropriate'
 
         if row.get('roof:shape') in FLAT_ROOFS:
             return 'flat'

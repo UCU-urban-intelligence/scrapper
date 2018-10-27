@@ -48,6 +48,7 @@ def magic(row):
         ROFF_TYPE_COEFF * roof_type +\
         ERROR_COEFF * error
 
+    y = round(y)
     if y > 10:
         y = 10
     if y < 0:
@@ -163,8 +164,6 @@ if __name__ == '__main__':
 
     df = pd.read_csv(file_name)
 
-    df['efficiency'] = df.apply(magic)
-
-    df.pop('roof_tupe')
+    df['efficiency'] = df.apply(magic, axis=1)
 
     df.to_csv(file_name)

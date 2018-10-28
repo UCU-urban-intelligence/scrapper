@@ -5,3 +5,4 @@ geopandas==0.4.0
 Shapely==1.6.4
 overpy==0.4
 requests==2.20.0
+scikit-learn==0.20.0

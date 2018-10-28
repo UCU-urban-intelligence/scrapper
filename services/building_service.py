@@ -1,11 +1,13 @@
 import pyproj
 
+import pickle
 import pandas as pd
 import logging
 from flask_pymongo import PyMongo
 from pymongo import GEOSPHERE
 from flask_pymongo.wrappers import Collection
 
+from sklearn.preprocessing import StandardScaler
 from config.app import BBOX_AREA_RESTRICTION_SIZE
 from scripts.air_condition import AirConditionGetter
 from scripts.buildings import BuildingsGetter, ShopsGetter, WGS84_CRS
@@ -58,7 +60,7 @@ class BuildingService:
         buildings['request_area_bottom_left'] = buildings['request_area_bottom_left'].apply(geometry.mapping)
         buildings['request_area_top_right'] = buildings['request_area_top_right'].apply(geometry.mapping)
         buildings['building_centroid'] = buildings['building_centroid'].apply(geometry.mapping)
-        return  buildings
+        return buildings
 
     def __save_buildings(self, buildings):
         buildings = self.__mapToGeoJson(buildings)
@@ -174,6 +176,17 @@ class BuildingService:
                          'shops_amount', 'roof_type', 'air_quality',
                          'temperature', 'cloud_cover', 'humidity']]
 
+        loaded_model = pickle.load(open('./model/finalized_model.sav', 'rb'))
+
+        sc = StandardScaler()
+        X = out[
+            ['air_quality', 'area', 'closest_shop',
+             'cloud_cover', 'humidity', 'shops_amount', 'temperature',
+             'flat_roof', 'gabled_roof', 'round_roof']]
+        X = sc.fit_transform(X)
+
+        y = loaded_model.predict(X)
+        out['efficiency'] = y
         # In case of DB fault
         with open('out.geojson', 'w') as f:
             f.write(out.to_json())

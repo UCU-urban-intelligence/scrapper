@@ -10,8 +10,7 @@ module.exports = {
       dest: 'javascripts',
       extractSharedJs: true,
       entries: {
-        app: ['./app.js'],
-        page: ['./page.js']
+        app: ['./app.js']
       },
       extensions: ['js']
     },
@@ -22,7 +21,7 @@ module.exports = {
       autoprefixer: {
         browsers: ['last 3 version']
       },
-      sass: {
+      scss: {
         indentedSyntax: true // Enable .sass syntax (.scss still works too)
       },
       extensions: ['sass', 'scss', 'css']
@@ -65,4 +64,4 @@ module.exports = {
       extensions: ['svg']
     }
   }
-}
+};

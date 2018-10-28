@@ -222,10 +222,35 @@ class BuildingsGetter(BaseOverpassGetter):
         ways_data = self._get_ways_data(result.ways)
         logging.info('Processed ways data')
 
-        return gpd.GeoDataFrame(
+        result = gpd.GeoDataFrame(
             ways_data + relations_data, columns=self.col_names,
             geometry=GEOM_COLUMN, crs=WGS84_CRS
         )
+
+        result = self._modify_roof_types(result)
+
+        return result
+
+    def _modify_roof_types(self, df):
+        df['inappropriate_type'] = df['roof_type'].map(
+            lambda x: 1 if x == 'inappropriate' else 0
+        )
+
+        df['flat_roof'] = df['roof_type'].map(
+            lambda x: 1 if x == 'flat' else 0
+        )
+
+        df['gabled_roof'] = df['roof_type'].map(
+            lambda x: 1 if x == 'gabled' else 0
+        )
+
+        df['round_roof'] = df['roof_type'].map(
+            lambda x: 1 if x == 'round' else 0
+        )
+
+        df.pop('roof_type')
+
+        return df
 
 
 class ShopsGetter(BaseOverpassGetter):

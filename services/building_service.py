@@ -171,10 +171,10 @@ class BuildingService:
             buildings, bottom_left, top_right
         )
 
-        out = buildings[['addr:housenumber', 'addr:street', 'type', 'geometry',
-                         'height', 'name', 'area', 'closest_shop',
-                         'shops_amount', 'roof_type', 'air_quality',
-                         'temperature', 'cloud_cover', 'humidity']]
+        # out = buildings[['addr:housenumber', 'addr:street', 'type', 'geometry',
+        #                  'height', 'name', 'area', 'closest_shop',
+        #                  'shops_amount', 'roof_type', 'air_quality',
+        #                  'temperature', 'cloud_cover', 'humidity']]
 
         loaded_model = pickle.load(open('./model/finalized_model.sav', 'rb'))
 
@@ -188,10 +188,10 @@ class BuildingService:
         y = loaded_model.predict(X)
         out['efficiency'] = y
         # In case of DB fault
-        with open('out.geojson', 'w') as f:
-            f.write(out.to_json())
+        # with open('out.geojson', 'w') as f:
+        #     f.write(out.to_json())
 
-        logging.info('Saved buildings to file')
+        # logging.info('Saved buildings to file')
 
         return buildings
 

@@ -9,11 +9,13 @@
   {% block head %}{% endblock %}
 </head>
 <body>
-    <div id="map"></div>
+  <div id="map"></div>
 
   <script defer src="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script>
   <script defer src="http://heyman.github.io/leaflet-areaselect/src/leaflet-areaselect.js"></script>
   <script defer src="javascripts/shared.js"></script>
   {% block javascript %}{% endblock %}
+
+<button id="detect">Detect</button>
 </body>
 </html>

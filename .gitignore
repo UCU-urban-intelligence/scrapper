@@ -115,5 +115,4 @@ dmypy.json
 # mac
 .DS_Store
 
-front/public
 front/node_modules

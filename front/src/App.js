@@ -3,21 +3,18 @@ import ReactMap, { GeoJSONLayer, Popup } from 'react-mapbox-gl';
 
 const accessToken = "pk.eyJ1Ijoic2VyaGlpLXRpdXRpdW5uaWsiLCJhIjoiY2pvcmZwcjJoMGJvaDNqczB5YTFiZWEzayJ9.hkUhm-xaZeZjBeVHOSFnOw";
 const style = "mapbox://styles/mapbox/dark-v9";
+// const style = "mapbox://styles/mapbox/streets-v9";
 
 const Map = ReactMap({
   accessToken
 });
 
-// const mapStyle = {
-//   height: '100vh',
-//   width: '100vw'
-// };
 const mapStyle = {
-  height: `${window.innerHeight - 20}px`,
-  width: `${window.innerWidth - 20}px`
+  height: `100%`,
+  width: `100%`
 };
 
-const montreal = [-73.567256, 45.5016889];
+// const montreal = [-73.567256, 45.5016889];
 const toronto = [-79.392464, 43.664317];
 
 class App extends Component {
@@ -38,7 +35,7 @@ class App extends Component {
       return response.json()
     })
     .then(geojson => {
-      console.log(geojson)
+      console.log(geojson);
       this.setState({
         geojson
       })
@@ -46,29 +43,9 @@ class App extends Component {
   }
 
   _getColorGradient(features, colors) {
-    var result = []
-    // var data = []
-    // const size = features.length
-    // const colorNum = colors.length
-    // for (var i = 0; i < size; i++) {
-    //   data.push(features[i].properties.efficiency)
-    // }
-    // data = data.sort((a, b) => { return a-b })
-    // const min = 3
-    // const max = 10
-    // const step = (max - min) / (colorNum + 1)
-    // var s = min + step
-    // var index = 0
-    // while (s < max) {
-    //   result.push(s)
-    //   result.push(colors[index])
-    //   s+=step
-    //   index++
-    // }
-    // return result
-    // var bounds = [0, 5.77, 6.06, 6.28, 6.52, 6.8, 7.3, 8.98]
-    var bounds = [0, 5.05, 5.97, 6.21, 6.47, 6.8, 7.32, 10.71]
-    for (var i = 0; i < bounds.length; i++) {
+    const result = [];
+    const bounds = [0, 5.77, 6.06, 6.28, 6.52, 6.8, 7.3, 8.98];
+    for (let i = 0; i < bounds.length; i++) {
       result.push(bounds[i], colors[i])
     }
 
@@ -77,11 +54,7 @@ class App extends Component {
 
   render() {
 
-    const {
-      geojson,
-      colors,
-      popupData
-    } = this.state
+    const { geojson, colors, popupData } = this.state;
 
     return (
       <Map
@@ -90,7 +63,7 @@ class App extends Component {
         zoom={[13]}
         center={toronto}
         pitch={[60]} // pitch in degrees
-      >
+        >
         {!geojson.features || <GeoJSONLayer
           data={geojson}
 
@@ -118,7 +91,6 @@ class App extends Component {
             }
           }}
           fillExtrusionOnClick={e => {
-            console.log(e.features[0].properties)
             this.setState({
               popupData: {
                 ...e.features[0].properties,
@@ -130,17 +102,18 @@ class App extends Component {
         {!popupData || <Popup coordinates={popupData.coordinates} closeButton={true} closeOnClick={false} anchor="bottom">
           <div style={{ width: '160px' }}>
             {(() => {
-              var data = ['efficiency']
-              for(var i in popupData) {
-                if(['coordinates', 'efficiency'].indexOf(i) !== -1)
-                  continue
+              const data = ['efficiency'];
+              for(let i in popupData) {
+                if(['coordinates', 'efficiency'].indexOf(i) !== -1) continue;
                 data.push(i)
               }
               return (data.map(item => {
-                return (<div key={item}>
-                  <span>{(item[0].toUpperCase() + item.substr(1)).split('_').join(' ')}:</span>
-                  <span style={{ float: 'right' }}>{Math.round(popupData[item]*1000)/1000}</span>
-                </div>)
+                return (
+                  <div key={item}>
+                    <span>{(item[0].toUpperCase() + item.substr(1)).split('_').join(' ')}:</span>
+                    <span style={{ float: 'right' }}>{Math.round(popupData[item]*1000)/1000}</span>
+                  </div>
+                )
               }))
             })()}
           </div>

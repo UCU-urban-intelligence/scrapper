@@ -6,3 +6,6 @@ ReactDOM.render(
   <App />,
   document.getElementById('root')
 );
+
+// import initMap from './map'
+// initMap(document.getElementById('root'))

@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
-import ReactMap from 'react-mapbox-gl';
-import { Layer, Feature } from 'react-mapbox-gl';
+import ReactMap, { GeoJSONLayer, Popup } from 'react-mapbox-gl';
 
 const accessToken = "pk.eyJ1Ijoic2VyaGlpLXRpdXRpdW5uaWsiLCJhIjoiY2pvcmZwcjJoMGJvaDNqczB5YTFiZWEzayJ9.hkUhm-xaZeZjBeVHOSFnOw";
 const style = "mapbox://styles/mapbox/dark-v9";
+// const style = "mapbox://styles/mapbox/streets-v9";
 
 const Map = ReactMap({
   accessToken
@@ -14,24 +14,125 @@ const mapStyle = {
   width: '100vw'
 };
 
-const kiev = [30.5238, 50.45466]
+const montreal = [-73.567256, 45.5016889];
+const toronto = [-79.384293, 43.653908];
 
 class App extends Component {
+
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      geojson: {},
+      colors: ["#c51b7d", "#de77ae", "#f1b6da", "#fde0ef", "#e6f5d0", "#b8e186", "#7fbc41", "#4d9221"],
+      popupData: undefined
+    }
+  }
+
+  componentDidMount() {
+    fetch('/out__Toronto.geojson')
+    .then(response => {
+      return response.json()
+    })
+    .then(geojson => {
+      console.log(geojson)
+      this.setState({
+        geojson
+      })
+    })
+  }
+
+  _getColorGradient(features, colors) {
+    var result = []
+    // var data = []
+    // const size = features.length
+    // const colorNum = colors.length
+    // for (var i = 0; i < size; i++) {
+    //   data.push(features[i].properties.efficiency)
+    // }
+    // data = data.sort((a, b) => { return a-b })
+    // const min = 3
+    // const max = 10
+    // const step = (max - min) / (colorNum + 1)
+    // var s = min + step
+    // var index = 0
+    // while (s < max) {
+    //   result.push(s)
+    //   result.push(colors[index])
+    //   s+=step
+    //   index++
+    // }
+    // return result
+    var bounds = [0, 5.77, 6.06, 6.28, 6.52, 6.8, 7.3, 8.98]
+    for (var i = 0; i < bounds.length; i++) {
+      result.push(bounds[i], colors[i])
+    }
+
+    return result
+  }
+
   render() {
+
+    const {
+      geojson,
+      colors,
+      popupData
+    } = this.state
+
+    if(geojson.features) {
+      console.log(this._getColorGradient(geojson.features, colors))
+    }
+
     return (
       <Map
         style={style}
         containerStyle={mapStyle}
-        center={kiev}
+        zoom={[14]}
+        center={toronto}
+        pitch={[60]} // pitch in degrees
       >
-        <Layer
-          type="symbol"
-          id="marker"
-          layout={{ "icon-image": "marker-15" }}>
-          <Feature coordinates={kiev}/>
-        </Layer>
-      </Map>
+        {!geojson.features || <GeoJSONLayer
+          data={geojson}
 
+          fillExtrusionLayout={{
+
+          }}
+
+          layerOptions={{
+            paint: {
+              'fill-extrusion-color': [
+                'interpolate',
+                ['linear'],
+                ['get', 'efficiency']
+              ].concat(this._getColorGradient(geojson.features, colors)),
+
+              'fill-extrusion-height': {
+                type: 'identity',
+                property: 'height'
+              },
+              'fill-extrusion-base': {
+                type:  'identity',
+                property: 'min_height'
+              },
+              'fill-extrusion-opacity': 1
+            }
+          }}
+          fillExtrusionOnClick={e => {
+            console.log(e)
+            console.log(e.features[0].properties)
+            this.setState({
+              popupData: {
+                ...e.features[0].properties,
+                coordinates: [e.lngLat.lng, e.lngLat.lat]
+              }
+            })
+          }}
+        />}
+        {!popupData || <Popup coordinates={popupData.coordinates} closeButton={true} closeOnClick={false} anchor="bottom">
+          <div>Efficiency: {popupData.efficiency}</div>
+        </Popup>}
+
+      </Map>
     );
   }
 }

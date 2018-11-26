@@ -1,13 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import AppBar from '@material-ui/core/AppBar';
-import Toolbar from '@material-ui/core/Toolbar';
-import Dashboard from './Dashboard';
+import App from './App';
+import { BrowserRouter } from 'react-router-dom';
 
 ReactDOM.render(
-  <Dashboard></Dashboard>,
+  <BrowserRouter>
+    <App></App>
+  </BrowserRouter>,
   document.getElementById('root')
 );
-
-// import initMap from './map'
-// initMap(document.getElementById('root'))

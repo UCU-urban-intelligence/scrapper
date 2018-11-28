@@ -84,7 +84,7 @@ class App extends React.Component {
           position="absolute"
           className={classNames(classes.appBar, classes.appBarShift)}
         >
-          <Toolbar className={classes.toolbar}>
+          <Toolbar className={classes.toolbar} style={{ backgroundColor: '#4d9221' }}>
             <IconButton
               color="inherit"
               className={classNames(

@@ -1,8 +1,9 @@
 import Typography from "@material-ui/core/Typography/Typography";
 import SimpleLineChart from "../components/SimpleLineChart";
+import SimplePieChart from "../components/SimplePieChart";
+import SimpleBarChart from "../components/SimpleBarChart";
 import React from "react";
 import {withStyles} from "@material-ui/core";
-import SimplePieChart from "../components/SimplePieChart";
 
 const styles = theme => ({
   appBarSpacer: theme.mixins.toolbar,
@@ -24,9 +25,10 @@ class Analytics extends React.Component {
         <Typography variant="h4" gutterBottom component="h2">
           Analytics
         </Typography>
-        <Typography component="div" className={classes.chartContainer}>
-          <SimpleLineChart />
-        </Typography>
+        <div style={{display: 'flex'}}>
+          <SimpleLineChart style={{width: '50%'}} />
+          <SimpleBarChart style={{width: '50%'}} />
+        </div>
         <Typography component="div" className={classes.chartContainer}>
           <SimplePieChart />
         </Typography>

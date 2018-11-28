@@ -10,11 +10,8 @@ import List from '@material-ui/core/List';
 import Typography from '@material-ui/core/Typography';
 import Divider from '@material-ui/core/Divider';
 import IconButton from '@material-ui/core/IconButton';
-import Badge from '@material-ui/core/Badge';
 import MenuIcon from '@material-ui/icons/Menu';
-import NotificationsIcon from '@material-ui/icons/Notifications';
 import { mainListItems } from './listItems';
-import ListItemText from "@material-ui/core/ListItemText/ListItemText";
 import { Switch, Route } from 'react-router-dom';
 import Analytics from "./routes/Analytics";
 import DarkMap from "./routes/DarkMap";
@@ -30,13 +27,6 @@ const styles = theme => ({
   },
   toolbar: {
     paddingRight: 24, // keep right padding when drawer closed
-  },
-  toolbarIcon: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    padding: '0 8px',
-    ...theme.mixins.toolbar,
   },
   appBar: {
     zIndex: theme.zIndex.drawer + 1,
@@ -113,22 +103,15 @@ class App extends React.Component {
             >
               Dashboard
             </Typography>
-            <IconButton color="inherit">
-              <Badge badgeContent={4} color="secondary">
-                <NotificationsIcon />
-              </Badge>
-            </IconButton>
           </Toolbar>
         </AppBar>
         <Drawer
           variant="permanent"
-          classes={{
-            paper: classNames(classes.drawerPaper),
-          }}
+          classes={{ paper: classNames(classes.drawerPaper) }}
           open={true}
         >
-          <div className={classes.toolbarIcon}>
-            <ListItemText primary="RoofMap" />
+          <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+            <img src="./images/picture.png" alt="" style={{height: '90px'}}/>
           </div>
           <Divider />
           <List>{mainListItems}</List>

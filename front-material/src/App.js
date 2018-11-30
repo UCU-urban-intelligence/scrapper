@@ -18,6 +18,10 @@ import DarkMap from "./routes/DarkMap";
 import Forecast from "./routes/Forecast";
 import Settings from "./routes/Settings";
 import Feedback from "./routes/Feedback";
+import ListItem from "@material-ui/core/ListItem/ListItem";
+import ListItemText from "@material-ui/core/ListItemText/ListItemText";
+import ListItemIcon from "@material-ui/core/ListItemIcon/ListItemIcon";
+import Map from "@material-ui/core/SvgIcon/SvgIcon";
 
 const drawerWidth = 240;
 
@@ -82,7 +86,7 @@ class App extends React.Component {
       geojson: {},
       popupData: undefined
     }
-  }
+  };
 
   componentDidMount() {
     fetch('/out__Toronto.geojson')
@@ -141,28 +145,38 @@ class App extends React.Component {
           </div>
           <Divider />
           <List>{mainListItems}</List>
-          <Divider /></Drawer>
-          {!popupData || <List>
-            {(() => {
-              const data = ['efficiency'];
-              for(let i in popupData) {
-                if(['coordinates', 'efficiency'].indexOf(i) !== -1) continue;
-                data.push(i)
-              }
-              return (data.map(item => {
-                return (
-                  <div key={item}>
-                    <span>{(item[0].toUpperCase() + item.substr(1)).split('_').join(' ')}:</span>
-                    <span style={{ float: 'right' }}>{Math.round(popupData[item]*1000)/1000}</span>
-                  </div>
-                )
-              }))
-            })()}
-          </List>}
+          <Divider />
+          <List>
+            <div>
+              {!popupData || (() => {
+                const data = ['efficiency'];
+                for(let i in popupData) {
+                  if(['coordinates', 'efficiency'].indexOf(i) !== -1) continue;
+                  data.push(i);
+                }
+                console.log(data);
+                return data.map((item, i) => {
+                  console.log(item);
+                  return (
+                    <ListItem key={i} style={{padding: "0 24px" }}>
+                      <ListItemIcon>
+                        <Map />
+                      </ListItemIcon>
+                      <ListItemText style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 0}}
+                        primary={(item[0].toUpperCase() + item.substr(1)).split('_').join(' ') + ":"}
+                        secondary={Math.round(popupData[item]*1000) / 1000} />
+                    </ListItem>
+                  )
+                })
+              })()}
+            </div>
+          </List>
+        </Drawer>
         <main className={classes.content}>
           <Switch>
             <Route path='/' component={Analytics} exact/>
-            <Route path='/map' component={() => <DarkMap
+            <Route path='/map' render={(props) => <DarkMap
+              {...props}
               geojson={this.state.geojson}
               updateFeatures={this.addFeatureList.bind(this)} />}
             />

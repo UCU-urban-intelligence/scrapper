@@ -93,7 +93,7 @@ class DarkMap extends Component {
                 ...e.features[0].properties,
                 coordinates: [e.lngLat.lng, e.lngLat.lat]
               }
-            })
+            });
             this.props.updateFeatures(e.features[0].properties)
           }}
         />}

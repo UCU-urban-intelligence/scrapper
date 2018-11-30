@@ -9,6 +9,8 @@ const styles = theme => ({
   appBarSpacer: theme.mixins.toolbar,
   chartContainer: {
     marginLeft: -22,
+    display: 'flex',
+    justifyContent: 'center'
   },
   tableContainer: {
     height: 320,

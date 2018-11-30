@@ -23,14 +23,13 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, per
 export default class SimplePieChart extends React.Component {
   render() {
     return (
-      <PieChart width={800} height={400} onMouseEnter={this.onPieEnter}>
+      <PieChart width={600} height={300} onMouseEnter={this.onPieEnter}>
         <Pie
           data={data}
           cx={300}
-          cy={200}
           labelLine={false}
           label={renderCustomizedLabel}
-          outerRadius={150}
+          outerRadius={140}
           fill="#8884d8"
         >
           {

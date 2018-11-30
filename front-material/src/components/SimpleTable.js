@@ -34,7 +34,7 @@ class SimpleTable extends React.Component {
           <TableBody>
             {Object.keys(data).map((key, i) => (
               <TableRow key={i}>
-                <TableCell>{key}</TableCell>
+                <TableCell><b>{key.replace('_', ' ')}</b></TableCell>
                 <TableCell>{data[key]}</TableCell>
               </TableRow>
             ))}

@@ -2,10 +2,10 @@ import { PieChart, Pie, Cell } from 'recharts';
 import React from "react";
 
 const data = [{name: 'Group A', value: 400}, {name: 'Group B', value: 300},
-  {name: 'Group C', value: 300}, {name: 'Group D', value: 200}];
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+  {name: 'Group C', value: 300}];
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28'];
 
-const TEXT = ["Logistics", "Product Loss", "Maintenance", "Rent"];
+const TEXT = ["Logistics", "Product Loss", "Maintenance"];
 
 const RADIAN = Math.PI / 180;
 const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
@@ -14,7 +14,7 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, per
   const y = cy  + radius * Math.sin(-midAngle * RADIAN);
 
   return (
-    <text x={x} y={y} fill="white" dominantBaseline="central">
+    <text style={{fontWeight: "bold", fontSize: "16px"}} x={x - 40} y={y} fill="white" dominantBaseline="central">
       {TEXT[index]}
     </text>
   );

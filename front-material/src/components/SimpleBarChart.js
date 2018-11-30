@@ -18,7 +18,6 @@ export default class StackedBarChart extends React.Component {
           <XAxis dataKey="name"/>
           <YAxis/>
           <Tooltip/>
-          <Legend />
           <Bar dataKey="CO2 emission reduction" stackId="a" fill="#8884d8" />
           <Bar dataKey="Stormwater reduction" stackId="a" fill="#82ca9d" />
           <Bar dataKey="Energy savings" stackId="a" fill="#28acd9" />

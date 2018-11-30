@@ -20,24 +20,24 @@ class DarkMap extends Component {
     super(props);
 
     this.state = {
-      geojson: {},
+      // geojson: {},
       colors: ["#c51b7d", "#de77ae", "#f1b6da", "#fde0ef", "#e6f5d0", "#b8e186", "#7fbc41", "#4d9221"],
       popupData: undefined
     }
   }
 
-  componentDidMount() {
-    fetch('/out__Toronto.geojson')
-    .then(response => {
-      return response.json()
-    })
-    .then(geojson => {
-      console.log(geojson);
-      this.setState({
-        geojson
-      })
-    })
-  }
+  // componentDidMount() {
+  //   fetch('/out__Toronto.geojson')
+  //   .then(response => {
+  //     return response.json()
+  //   })
+  //   .then(geojson => {
+  //     console.log(geojson);
+  //     this.setState({
+  //       geojson
+  //     })
+  //   })
+  // }
 
   _getColorGradient(features, colors) {
     const result = [];
@@ -51,7 +51,8 @@ class DarkMap extends Component {
 
   render() {
 
-    const { geojson, colors, popupData } = this.state;
+    const { colors, popupData } = this.state;
+    const { geojson } = this.props;
     return (
       <Map
         style={style}
@@ -93,6 +94,7 @@ class DarkMap extends Component {
                 coordinates: [e.lngLat.lng, e.lngLat.lat]
               }
             })
+            this.props.updateFeatures(e.features[0].properties)
           }}
         />}
         {!popupData || <Popup coordinates={popupData.coordinates} closeButton={true} closeOnClick={false} anchor="bottom">

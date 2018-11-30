@@ -75,8 +75,34 @@ const styles = theme => ({
 
 class App extends React.Component {
 
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      geojson: {},
+      popupData: undefined
+    }
+  }
+
+  componentDidMount() {
+    fetch('/out__Toronto.geojson')
+    .then(response => {
+      return response.json()
+    })
+    .then(geojson => {
+      this.setState({
+        geojson
+      })
+    })
+  }
+
+  addFeatureList(popupData) {
+    this.setState({ popupData })
+  }
+
   render() {
     const { classes } = this.props;
+    const { popupData } = this.state;
     return (
       <div className={classes.root}>
         <CssBaseline />
@@ -115,12 +141,31 @@ class App extends React.Component {
           </div>
           <Divider />
           <List>{mainListItems}</List>
-          <Divider />
-        </Drawer>
+          <Divider /></Drawer>
+          {!popupData || <List>
+            {(() => {
+              const data = ['efficiency'];
+              for(let i in popupData) {
+                if(['coordinates', 'efficiency'].indexOf(i) !== -1) continue;
+                data.push(i)
+              }
+              return (data.map(item => {
+                return (
+                  <div key={item}>
+                    <span>{(item[0].toUpperCase() + item.substr(1)).split('_').join(' ')}:</span>
+                    <span style={{ float: 'right' }}>{Math.round(popupData[item]*1000)/1000}</span>
+                  </div>
+                )
+              }))
+            })()}
+          </List>}
         <main className={classes.content}>
           <Switch>
             <Route path='/' component={Analytics} exact/>
-            <Route path='/map' component={DarkMap}/>
+            <Route path='/map' component={() => <DarkMap
+              geojson={this.state.geojson}
+              updateFeatures={this.addFeatureList.bind(this)} />}
+            />
             <Route path='/forecast' component={Forecast}/>
             <Route path='/feedback' component={Feedback}/>
             <Route path='/settings' component={Settings}/>
